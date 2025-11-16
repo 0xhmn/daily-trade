@@ -1,0 +1,131 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+*.log
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+.pyenv
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Node.js / React
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# AWS
+.aws-sam/
+cdk.out/
+cdk.context.json
+.cdk.staging/
+*.js.map
+bin
+
+# Terraform (if used)
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+
+# Data files
+data/knowledge_base/*.pdf
+data/knowledge_base/*.txt
+data/knowledge_base/*.docx
+data/sample_data/*
+!data/knowledge_base/.gitkeep
+!data/sample_data/.gitkeep
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+
+# CDK
+*.js
+!jest.config.js
+*.d.ts
+node_modules
+
+# Exclude CDK synthesized CloudFormation templates
+infrastructure/cdk.out/
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
