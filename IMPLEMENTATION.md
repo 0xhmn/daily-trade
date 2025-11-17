@@ -2,7 +2,7 @@
 
 **Project**: AI-Powered Trading Assistant
 **Last Updated**: November 16, 2025
-**Current Phase**: Phase 0 - Project Setup & Infrastructure
+**Current Phase**: Phase 1 - Knowledge Base Pipeline (RAG Foundation)
 
 ---
 
@@ -79,7 +79,7 @@ This document tracks the detailed implementation progress across all phases. Eac
 - [x] Create docker-compose.yml for local development
 - [ ] Configure local PostgreSQL/DynamoDB Local (if needed) - _Phase 2_
 - [ ] Set up local OpenSearch (or mock for development) - _Phase 1_
-- [ ] Create development setup script (setup_dev.sh) - _Optional_
+- [ ] Create development setup script (setup*dev.sh) - \_Optional*
 - [x] Document local development setup in README
 
 ### AWS Configuration
@@ -113,66 +113,79 @@ This document tracks the detailed implementation progress across all phases. Eac
 
 **Goal**: Build document ingestion and RAG retrieval system
 
+**Status**: IN PROGRESS
+
 ### Document Processing
 
-- [ ] Implement PDF text extraction (PyPDF2 or pdfplumber)
-- [ ] Create text chunking algorithm with overlap
-- [ ] Add sentence boundary preservation
-- [ ] Implement metadata extraction from documents
-- [ ] Create document processor service class
-- [ ] Add support for multiple document formats (PDF, TXT, DOCX)
+- [x] Implement PDF text extraction (PyPDF2 or pdfplumber)
+- [x] Create text chunking algorithm with overlap
+- [x] Add sentence boundary preservation
+- [x] Implement metadata extraction from documents
+- [x] Create document processor service class
+- [x] Add support for multiple document formats (PDF, TXT, DOCX)
 - [ ] Write unit tests for document processing
 
 ### Embedding Generation
 
-- [ ] Set up AWS Bedrock client for embeddings
-- [ ] Implement batch embedding generation
-- [ ] Create embedder service class
-- [ ] Add embedding caching mechanism
-- [ ] Implement retry logic for API failures
-- [ ] Add embedding dimension validation
+- [x] Set up AWS Bedrock client for embeddings
+- [x] Implement batch embedding generation
+- [x] Create embedder service class
+- [ ] Add embedding caching mechanism - _Deferred to Phase 6_
+- [x] Implement retry logic for API failures
+- [x] Add embedding dimension validation
 - [ ] Write unit tests for embedding generation
 
 ### OpenSearch Deployment
 
-- [ ] Create OpenSearch CDK stack
-- [ ] Define index mapping with kNN vectors
-- [ ] Configure OpenSearch domain (instance type, storage)
-- [ ] Set up VPC and security groups
-- [ ] Deploy OpenSearch domain
+- [ ] Create OpenSearch CDK stack - _Already in infrastructure/lib/daily-trade-stack.ts_
+- [x] Define index mapping with kNN vectors
+- [x] Configure OpenSearch domain (instance type, storage)
+- [ ] Set up VPC and security groups - _Already in CDK stack_
+- [ ] Deploy OpenSearch domain - _Ready to deploy via CDK_
 - [ ] Test OpenSearch connectivity
-- [ ] Create index creation script
+- [x] Create index creation script
 
 ### Hybrid Search Implementation
 
-- [ ] Implement vector search (kNN) function
-- [ ] Implement lexical search (BM25) function
-- [ ] Create Reciprocal Rank Fusion (RRF) algorithm
-- [ ] Build HybridSearchService class
-- [ ] Add search result ranking logic
-- [ ] Implement search filters (metadata-based)
-- [ ] Add search performance optimization
+- [x] Implement vector search (kNN) function
+- [x] Implement lexical search (BM25) function
+- [x] Create Reciprocal Rank Fusion (RRF) algorithm
+- [x] Build HybridSearchService class
+- [x] Add search result ranking logic
+- [x] Implement search filters (metadata-based)
+- [ ] Add search performance optimization - _Will tune after testing_
 - [ ] Write unit tests for search functions
 
 ### Document Indexing
 
-- [ ] Create indexer service class
-- [ ] Implement bulk indexing to OpenSearch
-- [ ] Add progress tracking for large documents
-- [ ] Create re-indexing capability
-- [ ] Implement index versioning
-- [ ] Add error handling and recovery
+- [x] Create indexer service class
+- [x] Implement bulk indexing to OpenSearch
+- [x] Add progress tracking for large documents
+- [x] Create re-indexing capability
+- [ ] Implement index versioning - _Deferred_
+- [x] Add error handling and recovery
 - [ ] Write integration tests for indexing
 
 ### Ingestion Script
 
-- [ ] Create ingest_documents.py script
-- [ ] Add CLI arguments (file path, metadata)
-- [ ] Implement batch processing for multiple files
-- [ ] Add progress bars and logging
-- [ ] Create metadata template for documents
-- [ ] Add validation for document metadata
+- [x] Create ingest_documents.py script
+- [x] Add CLI arguments (file path, metadata)
+- [x] Implement batch processing for multiple files
+- [x] Add progress bars and logging
+- [x] Create metadata template for documents
+- [x] Add validation for document metadata
+- [x] Fix Python import configuration (pyrightconfig.json)
+- [x] Add local OpenSearch role ARN parameter
 - [ ] Test with sample trading books (2-3 books)
+
+### AWS Credentials & Access Management
+
+- [x] Create IAM role for local OpenSearch access (CDK)
+- [x] Add role to OpenSearch access policy (CDK)
+- [x] Implement STAGE-based credential helper (local vs prod)
+- [x] Update OpenSearch repository to use credential helper
+- [x] Create .env.example with STAGE configuration
+- [x] Document local access setup (docs/LOCAL_OPENSEARCH_ACCESS.md)
 
 ### Data Storage
 
@@ -870,7 +883,7 @@ This document tracks the detailed implementation progress across all phases. Eac
 ## Progress Summary
 
 - **Phase 0**: ✅ **COMPLETED** (27/40 tasks - Core infrastructure complete, remaining items are manual deployment steps or deferred to later phases)
-- **Phase 1**: ⬜ Not Started (0/48 tasks)
+- **Phase 1**: 🔄 **IN PROGRESS** (36/54 tasks - Core RAG components implemented with local access, ready for deployment and testing)
 - **Phase 2**: ⬜ Not Started (0/44 tasks)
 - **Phase 3**: ⬜ Not Started (0/38 tasks)
 - **Phase 4**: ⬜ Not Started (0/53 tasks)
@@ -878,7 +891,7 @@ This document tracks the detailed implementation progress across all phases. Eac
 - **Phase 6**: ⬜ Not Started (0/31 tasks)
 - **Phase 7**: ⬜ Not Started (0/38 tasks)
 
-**Total Progress**: 27/342 tasks completed (8%)
+**Total Progress**: 63/348 tasks completed (18%)
 
 ---
 
@@ -888,23 +901,64 @@ This document tracks the detailed implementation progress across all phases. Eac
 **Duration**: TBD
 **Goal**: Build document ingestion and RAG retrieval system
 
+**Status**: ✅ Core implementation complete, ready for deployment and testing
+
+**Completed in this sprint**:
+
+- ✅ Document processor with PDF extraction and chunking
+- ✅ Embedding service with AWS Bedrock integration
+- ✅ OpenSearch repository with hybrid search (vector + lexical)
+- ✅ Complete ingestion CLI script with role ARN support
+- ✅ Python import configuration fixed
+- ✅ IAM role for local OpenSearch access
+- ✅ STAGE-based credential management (local/prod)
+- ✅ Comprehensive documentation for local setup
+
 **Next Steps**:
 
-1. Deploy AWS infrastructure (CDK)
-2. Implement document processing
-3. Set up OpenSearch domain
-4. Build embedding generation
-5. Implement hybrid search
-6. Create document ingestion script
+1. **Deploy AWS Infrastructure** (CDK):
 
-**Ready to Deploy**:
+   ```bash
+   cd infrastructure
+   npm install
+   cdk bootstrap  # One-time per account/region
+   cdk deploy     # Deploys OpenSearch, S3, DynamoDB, etc.
+   ```
 
-```bash
-cd infrastructure
-npm install
-cdk bootstrap  # One-time per account
-cdk deploy
-```
+2. **Test Document Ingestion**:
+
+   ```bash
+   # Set environment variables
+   export STAGE=local
+   export OPENSEARCH_ROLE_ARN=<LocalOpenSearchRoleArn-from-cdk-output>
+
+   # Run ingestion (requires IAM user with sts:AssumeRole permission)
+   python scripts/ingest_documents.py \
+     --pdf data/knowledge_base/swing_trading/Alan_Farley_The_Master_Swing_Trader.pdf \
+     --title "The Master Swing Trader" \
+     --author "Alan Farley" \
+     --strategy-type swing_trading \
+     --opensearch-host <your-opensearch-endpoint> \
+     --local-role-arn $OPENSEARCH_ROLE_ARN \
+     --create-index
+   ```
+
+3. **Verify End-to-End Workflow**:
+
+   - Automatic role assumption works (check logs for "Successfully assumed role")
+   - Document chunking works correctly
+   - Embeddings generated successfully
+   - OpenSearch indexing completes
+   - Hybrid search returns relevant results
+
+4. **Add 2-3 More Books** to complete Phase 1
+
+**Prerequisites**: IAM user must have `sts:AssumeRole` permission (typically granted via organizational policies)
+
+**Reference Documentation**:
+
+- Local OpenSearch Access: `docs/LOCAL_OPENSEARCH_ACCESS.md`
+- Environment Configuration: `backend/.env.example`
 
 ---
 
