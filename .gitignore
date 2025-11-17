@@ -10,7 +10,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -94,9 +93,7 @@ docker-compose.override.yml
 data/knowledge_base/*.pdf
 data/knowledge_base/*.txt
 data/knowledge_base/*.docx
-data/sample_data/*
 !data/knowledge_base/.gitkeep
-!data/sample_data/.gitkeep
 
 # Logs
 logs/

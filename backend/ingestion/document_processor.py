@@ -10,15 +10,8 @@ from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 import re
 
-try:
-    import PyPDF2
-except ImportError:
-    PyPDF2 = None
-
-try:
-    from pdfplumber import open as pdfplumber_open
-except ImportError:
-    pdfplumber_open = None
+import PyPDF2
+import pdfplumber
 
 
 logger = logging.getLogger(__name__)
@@ -46,6 +39,7 @@ class DocumentMetadata:
     asset_class: List[str]  # equities, forex, commodities
     key_concepts: List[str]
     source_file: str
+    document_type: str  # test_doc, ebook, article etc.
     page_count: Optional[int] = None
 
 
@@ -73,12 +67,6 @@ class DocumentProcessor:
         self.chunk_overlap = chunk_overlap
         self.min_chunk_size = min_chunk_size
 
-        if not PyPDF2 and not pdfplumber_open:
-            raise ImportError(
-                "Either PyPDF2 or pdfplumber must be installed. "
-                "Install with: pip install PyPDF2 pdfplumber"
-            )
-
     def extract_text_from_pdf(self, pdf_path: Path) -> tuple[str, int]:
         """
         Extract text from PDF file.
@@ -92,22 +80,16 @@ class DocumentProcessor:
         logger.info(f"Extracting text from: {pdf_path}")
 
         # Try pdfplumber first (better text extraction)
-        if pdfplumber_open:
-            try:
-                return self._extract_with_pdfplumber(pdf_path)
-            except Exception as e:
-                logger.warning(f"pdfplumber failed: {e}, falling back to PyPDF2")
-
-        # Fallback to PyPDF2
-        if PyPDF2:
+        try:
+            return self._extract_with_pdfplumber(pdf_path)
+        except Exception as e:
+            logger.warning(f"pdfplumber failed: {e}, falling back to PyPDF2")
             return self._extract_with_pypdf2(pdf_path)
-
-        raise RuntimeError("No PDF extraction library available")
 
     def _extract_with_pdfplumber(self, pdf_path: Path) -> tuple[str, int]:
         """Extract text using pdfplumber."""
         text_parts = []
-        with pdfplumber_open(pdf_path) as pdf:
+        with pdfplumber.open(pdf_path) as pdf:
             page_count = len(pdf.pages)
             for page in pdf.pages:
                 text = page.extract_text()
@@ -245,6 +227,7 @@ class DocumentProcessor:
             "key_concepts": doc_metadata.key_concepts,
             "source_file": doc_metadata.source_file,
             "chunk_index": chunk_index,
+            "document_type": doc_metadata.document_type,
         }
 
     def process_document(self, pdf_path: Path, metadata: DocumentMetadata) -> List[DocumentChunk]:
@@ -286,6 +269,7 @@ if __name__ == "__main__":
         market_conditions=["trending", "ranging"],
         asset_class=["equities"],
         key_concepts=["chart_patterns", "indicators", "trend_analysis"],
+        document_type="ebook",
         source_file="technical_analysis_murphy.pdf",
     )
 

@@ -75,13 +75,15 @@ class OpenSearchRepository:
         )
 
         # Initialize OpenSearch client
+        # Set Host header explicitly to match domain endpoint
         self.client = OpenSearch(
             hosts=[{"host": host, "port": 443}],
             http_auth=awsauth,
             use_ssl=use_ssl,
             verify_certs=verify_certs,
             connection_class=RequestsHttpConnection,
-            timeout=30,
+            timeout=120,  # Increased for bulk operations with large documents
+            headers={"Host": host},
         )
 
         logger.info(f"Initialized OpenSearch repository: {host}, index: {index_name}")
@@ -139,6 +141,7 @@ class OpenSearchRepository:
                             "key_concepts": {"type": "keyword"},
                             "source_file": {"type": "keyword"},
                             "chunk_index": {"type": "integer"},
+                            "document_type": {"type": "keyword"},
                         }
                     },
                 }

@@ -7,17 +7,17 @@ Processes PDFs, generates embeddings, and indexes to OpenSearch.
 
 Usage:
     python scripts/ingest_documents.py \
-    --pdf data/knowledge_base/test/May-Short-Stories.pdf \
-    --title "The Master Swing Trader" \
-    --author "Alan Farley" \
-    --strategy-type swing_trading \
-    --timeframe "3-14 days" \
-    --market-conditions trending ranging \
-    --asset-class equities \
-    --concepts swing_patterns multi_timeframe \
-    --opensearch-host search-daily-trade-knowledge-001-l5zwovvaduyu5jorkbqfcrpspe.us-east-1.es.amazonaws.com \
-    --local-role-arn arn:aws:iam::560271561561:role/DailyTradeLocalOpenSearchAccess \
-    --create-index
+        --pdf data/sample_data/The_Rubaiyat_of_Omar_Khayyam.pdf \
+        --opensearch-host search-daily-trade-knowledge-001-l5zwovvaduyu5jorkbqfcrpspe.us-east-1.es.amazonaws.com \
+        --local-role-arn arn:aws:iam::560271561561:role/DailyTradeLocalOpenSearchAccess \
+        --index-name trading-knowledge \
+        --title "The Rubaiyat of Omar Khayyam" \
+        --author "Khayyam" \
+        --strategy-type test \
+        --timeframe "11th_century_persian" \
+        --asset-class poetry_collection \
+        --concepts mortality hedonism carpe_diem philosophy wine love time \
+        --document-type test-doc
 """
 
 import argparse
@@ -55,8 +55,15 @@ def parse_args():
         "--strategy-type",
         type=str,
         required=True,
-        choices=["swing_trading", "technical_analysis", "risk_management"],
+        choices=["swing_trading", "technical_analysis", "risk_management", "test"],
         help="Strategy type",
+    )
+    parser.add_argument(
+        "--document-type",
+        type=str,
+        required=True,
+        choices=["test-doc", "ebook"],
+        help="Type of Document - use test for test documents",
     )
 
     # Optional arguments
@@ -163,6 +170,7 @@ def main():
         market_conditions=args.market_conditions,
         asset_class=args.asset_class,
         key_concepts=args.concepts,
+        document_type=args.document_type,
         source_file=pdf_path.name,
     )
 
