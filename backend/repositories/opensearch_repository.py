@@ -7,10 +7,10 @@ Handles vector storage, indexing, and hybrid search (vector + lexical).
 import logging
 import sys
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
+
 from opensearchpy import OpenSearch, RequestsHttpConnection  # type: ignore
 from opensearchpy.helpers import bulk  # type: ignore
-import boto3
 from requests_aws4auth import AWS4Auth  # type: ignore
 
 # Add backend to path for utils import
@@ -132,7 +132,10 @@ class OpenSearchRepository:
                     },
                     "metadata": {
                         "properties": {
-                            "title": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
+                            "title": {
+                                "type": "text",
+                                "fields": {"keyword": {"type": "keyword"}},
+                            },
                             "author": {"type": "keyword"},
                             "strategy_type": {"type": "keyword"},
                             "timeframe": {"type": "keyword"},
@@ -206,7 +209,10 @@ class OpenSearchRepository:
         return success, len(failed)
 
     def vector_search(
-        self, query_embedding: List[float], k: int = 10, filters: Optional[Dict[str, Any]] = None
+        self,
+        query_embedding: List[float],
+        k: int = 10,
+        filters: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
         """
         Perform kNN vector search.

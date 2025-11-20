@@ -5,14 +5,13 @@ Handles PDF text extraction, chunking, and metadata management.
 """
 
 import logging
-from pathlib import Path
-from typing import List, Dict, Any, Optional
-from dataclasses import dataclass
 import re
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
-import PyPDF2
 import pdfplumber
-
+import PyPDF2
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +53,12 @@ class DocumentProcessor:
     - Metadata extraction and tagging
     """
 
-    def __init__(self, chunk_size: int = 1000, chunk_overlap: int = 200, min_chunk_size: int = 100):
+    def __init__(
+        self,
+        chunk_size: int = 1000,
+        chunk_overlap: int = 200,
+        min_chunk_size: int = 100,
+    ):
         """
         Initialize document processor.
 

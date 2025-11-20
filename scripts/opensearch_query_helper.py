@@ -14,16 +14,15 @@ Usage:
 import argparse
 import logging
 import sys
-import json
-from pathlib import Path
-from typing import Dict, Any, List, Optional
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 # Add backend to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "backend"))
 
-from repositories.opensearch_repository import OpenSearchRepository
 from ingestion.embedder import EmbeddingService
+from repositories.opensearch_repository import OpenSearchRepository
 
 
 # Color codes for terminal output
@@ -143,10 +142,7 @@ def check_index_health(repo: OpenSearchRepository) -> Dict[str, Any]:
         index_mappings = mappings[repo.index_name]["mappings"]
 
         # Check embedding dimension
-        if (
-            "properties" in index_mappings
-            and "embedding" in index_mappings["properties"]
-        ):
+        if "properties" in index_mappings and "embedding" in index_mappings["properties"]:
             embedding_config = index_mappings["properties"]["embedding"]
             dimension = embedding_config.get("dimension", "N/A")
             print_info("Embedding Dimension", dimension)
@@ -160,9 +156,7 @@ def check_index_health(repo: OpenSearchRepository) -> Dict[str, Any]:
         index_settings = settings[repo.index_name]["settings"]["index"]
 
         print_info("Number of Shards", index_settings.get("number_of_shards", "N/A"))
-        print_info(
-            "Number of Replicas", index_settings.get("number_of_replicas", "N/A")
-        )
+        print_info("Number of Replicas", index_settings.get("number_of_replicas", "N/A"))
         print_info("kNN Enabled", index_settings.get("knn", "N/A"))
 
         return stats
@@ -172,9 +166,7 @@ def check_index_health(repo: OpenSearchRepository) -> Dict[str, Any]:
         return {}
 
 
-def sample_documents(
-    repo: OpenSearchRepository, sample_size: int = 3
-) -> List[Dict[str, Any]]:
+def sample_documents(repo: OpenSearchRepository, sample_size: int = 3) -> List[Dict[str, Any]]:
     """
     Retrieve sample documents from the index.
 
@@ -230,9 +222,7 @@ def sample_documents(
         return []
 
 
-def test_lexical_search(
-    repo: OpenSearchRepository, query: str, k: int = 5
-) -> List[Dict[str, Any]]:
+def test_lexical_search(repo: OpenSearchRepository, query: str, k: int = 5) -> List[Dict[str, Any]]:
     """
     Test lexical (BM25) search.
 
@@ -479,9 +469,7 @@ def delete_documents_by_query(
         return {"deleted": 0, "error": str(e)}
 
 
-def recreate_index(
-    repo: OpenSearchRepository, vector_dimension: int = 1536
-) -> Dict[str, Any]:
+def recreate_index(repo: OpenSearchRepository, vector_dimension: int = 1536) -> Dict[str, Any]:
     """
     Recreate the OpenSearch index (deletes existing index and creates new one).
 
@@ -571,23 +559,17 @@ def show_data_statistics(repo: OpenSearchRepository) -> Dict[str, Any]:
                         "order": {"_count": "desc"},
                     },
                     "aggs": {
-                        "source_files": {
-                            "terms": {"field": "metadata.source_file", "size": 10}
-                        },
+                        "source_files": {"terms": {"field": "metadata.source_file", "size": 10}},
                         "types": {"terms": {"field": "metadata.type", "size": 10}},
                         "strategy_types": {
                             "terms": {"field": "metadata.strategy_type", "size": 10}
                         },
                         "authors": {"terms": {"field": "metadata.author", "size": 10}},
-                        "timeframes": {
-                            "terms": {"field": "metadata.timeframe", "size": 10}
-                        },
+                        "timeframes": {"terms": {"field": "metadata.timeframe", "size": 10}},
                     },
                 },
                 "total_by_type": {"terms": {"field": "metadata.type", "size": 20}},
-                "total_by_source": {
-                    "terms": {"field": "metadata.source_file", "size": 50}
-                },
+                "total_by_source": {"terms": {"field": "metadata.source_file", "size": 50}},
             },
         }
 
@@ -696,9 +678,7 @@ def print_summary(results: Dict[str, Any]):
     print(f"\n{Colors.BOLD}Index Status:{Colors.ENDC}")
     index = results.get("index", {})
     if index.get("exists"):
-        print_success(
-            f"  Index exists with {index.get('document_count', 0):,} documents"
-        )
+        print_success(f"  Index exists with {index.get('document_count', 0):,} documents")
         print(f"  Size: {index.get('size_in_bytes', 0) / 1024 / 1024:.2f} MB")
     else:
         print_error("  Index does not exist")
@@ -782,9 +762,7 @@ def parse_args():
         action="store_true",
         help="Run health checks (cluster and index)",
     )
-    parser.add_argument(
-        "--lexical", action="store_true", help="Run lexical search test"
-    )
+    parser.add_argument("--lexical", action="store_true", help="Run lexical search test")
     parser.add_argument("--vector", action="store_true", help="Run vector search test")
     parser.add_argument("--hybrid", action="store_true", help="Run hybrid search test")
     parser.add_argument(
@@ -868,9 +846,7 @@ def main():
 
         # Handle index recreation
         if args.recreate_index:
-            recreate_result = recreate_index(
-                repo, vector_dimension=args.vector_dimension
-            )
+            recreate_result = recreate_index(repo, vector_dimension=args.vector_dimension)
             test_results["recreate_result"] = recreate_result
             # Exit after recreation
             return
@@ -893,22 +869,16 @@ def main():
         # Initialize embedder if needed for vector/hybrid searches
         embedder = None
         if args.vector or args.hybrid:
-            embedder = EmbeddingService(
-                model_id=args.embedding_model, region_name=args.region
-            )
+            embedder = EmbeddingService(model_id=args.embedding_model, region_name=args.region)
 
         # Run lexical search
         if args.lexical:
-            lexical_results = test_lexical_search(
-                repo, args.test_query, k=args.search_k
-            )
+            lexical_results = test_lexical_search(repo, args.test_query, k=args.search_k)
             test_results["lexical_results"] = lexical_results
 
         # Run vector search
         if args.vector and embedder:
-            vector_results = test_vector_search(
-                repo, embedder, args.test_query, k=args.search_k
-            )
+            vector_results = test_vector_search(repo, embedder, args.test_query, k=args.search_k)
             test_results["vector_results"] = vector_results
 
         # Run hybrid search

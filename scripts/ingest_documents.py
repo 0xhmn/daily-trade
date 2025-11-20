@@ -24,17 +24,15 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import List
+
 from tqdm import tqdm
-import os
 
 # Add backend to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "backend"))
 
-from ingestion.document_processor import DocumentProcessor, DocumentMetadata
+from ingestion.document_processor import DocumentMetadata, DocumentProcessor
 from ingestion.embedder import EmbeddingService
 from repositories.opensearch_repository import OpenSearchRepository
-
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -44,9 +42,7 @@ logger = logging.getLogger(__name__)
 
 def parse_args():
     """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(
-        description="Ingest trading documents into knowledge base"
-    )
+    parser = argparse.ArgumentParser(description="Ingest trading documents into knowledge base")
 
     # Required arguments
     parser.add_argument("--pdf", type=str, required=True, help="Path to PDF file")
@@ -86,9 +82,7 @@ def parse_args():
         default=["equities"],
         help="Applicable asset classes",
     )
-    parser.add_argument(
-        "--concepts", nargs="+", default=[], help="Key concepts in the document"
-    )
+    parser.add_argument("--concepts", nargs="+", default=[], help="Key concepts in the document")
 
     # Processing parameters
     parser.add_argument(
@@ -157,9 +151,7 @@ def main():
 
     # Step 1: Initialize document processor
     logger.info("\n[1/4] Initializing document processor...")
-    processor = DocumentProcessor(
-        chunk_size=args.chunk_size, chunk_overlap=args.chunk_overlap
-    )
+    processor = DocumentProcessor(chunk_size=args.chunk_size, chunk_overlap=args.chunk_overlap)
 
     # Create metadata
     metadata = DocumentMetadata(
