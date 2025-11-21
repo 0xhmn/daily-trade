@@ -5,10 +5,20 @@ OpenSearch Health Check and Testing Script
 Tests OpenSearch cluster health, samples documents, and validates search functionality.
 
 Usage:
+
+Run sample Query:
+
     python scripts/opensearch_query_helper.py \
         --opensearch-host search-daily-trade-knowledge-001-l5zwovvaduyu5jorkbqfcrpspe.us-east-1.es.amazonaws.com \
         --local-role-arn arn:aws:iam::560271561561:role/DailyTradeLocalOpenSearchAccess \
         --test-query "Michael Favala Goldman"
+
+Get book stats:
+
+    python scripts/opensearch_query_helper.py \
+        --opensearch-host search-daily-trade-knowledge-001-l5zwovvaduyu5jorkbqfcrpspe.us-east-1.es.amazonaws.com \
+        --local-role-arn arn:aws:iam::560271561561:role/DailyTradeLocalOpenSearchAccess \
+        --stat
 """
 
 import argparse

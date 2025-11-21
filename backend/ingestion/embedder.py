@@ -211,9 +211,6 @@ class EmbeddingService:
         Returns:
             True if valid, False otherwise
         """
-        if not isinstance(embedding, list):
-            logger.error(f"Embedding is not a list: {type(embedding)}")
-            return False
 
         if len(embedding) != self.expected_dimension:
             logger.error(

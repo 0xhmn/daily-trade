@@ -18,6 +18,39 @@ Usage:
         --asset-class poetry_collection \
         --concepts mortality hedonism carpe_diem philosophy wine love time \
         --document-type test-doc
+
+python scripts/ingest_documents.py \
+    --pdf data/knowledge_base/swing_trading/William_ONeil_How_to_Make_Money_in_Stocks.pdf \
+    --opensearch-host search-daily-trade-knowledge-001-l5zwovvaduyu5jorkbqfcrpspe.us-east-1.es.amazonaws.com \
+    --local-role-arn arn:aws:iam::560271561561:role/DailyTradeLocalOpenSearchAccess \
+    --index-name trading-knowledge \
+    --title "How to Make Money in Stocks: A Winning System in Good Times and Bad, Fourth Edition" \
+    --author "William O'Neil" \
+    --strategy-type swing_trading \
+    --document-type ebook \
+    --timeframe "3-8_weeks" \
+    --market-conditions trending bullish \
+    --asset-class equities \
+    --concepts \
+        CAN_SLIM \
+        cup_with_handle \
+        relative_strength \
+        institutional_sponsorship \
+        volume_analysis \
+        market_direction \
+        growth_stocks \
+        breakout_patterns \
+        earnings_growth \
+        new_products \
+        supply_demand \
+        leader_laggard \
+        200_day_moving_average \
+        market_tops \
+        market_bottoms \
+        position_sizing \
+        cutting_losses \
+        IBD_ratings
+
 """
 
 import argparse
