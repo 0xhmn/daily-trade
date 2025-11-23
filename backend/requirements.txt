@@ -40,6 +40,10 @@ pytz
 PyPDF2
 pdfplumber
 python-docx
+PyMuPDF
+
+# Image Processing
+Pillow
 
 # NLP
 nltk

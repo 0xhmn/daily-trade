@@ -109,13 +109,13 @@ This document tracks the detailed implementation progress across all phases. Eac
 
 ---
 
-## Phase 1: Knowledge Base Pipeline (RAG Foundation) ✅
+## Phase 1: Knowledge Base Pipeline (RAG Foundation) 🔄
 
-**Goal**: Build document ingestion and RAG retrieval system
+**Goal**: Build multimodal document ingestion and RAG retrieval system with image support
 
-**Status**: COMPLETED
+**Status**: IN PROGRESS - Enhancing with multimodal capabilities
 
-### Document Processing
+### Document Processing (Core)
 
 - [x] Implement PDF text extraction (PyPDF2 or pdfplumber)
 - [x] Create text chunking algorithm with overlap
@@ -125,14 +125,73 @@ This document tracks the detailed implementation progress across all phases. Eac
 - [x] Add support for multiple document formats (PDF, TXT, DOCX)
 - [ ] Write unit tests for document processing
 
+### Image Extraction & Processing (NEW)
+
+- [ ] Create `image_processor.py` module
+- [ ] Implement PDF image extraction with pdfplumber
+- [ ] Extract image position metadata (page, bbox, coordinates)
+- [ ] Add OCR for text-heavy images (optional enhancement)
+- [ ] Create ImageProcessor service class
+- [ ] Implement S3 upload for extracted images
+- [ ] Generate unique image IDs with document context
+- [ ] Write unit tests for image extraction
+
+### Claude Vision Integration (NEW)
+
+- [ ] Set up Bedrock client for Claude 3.5 Sonnet
+- [ ] Create vision analysis prompt templates for trading content
+- [ ] Implement image analysis with Claude (charts, diagrams, tables)
+- [ ] Extract technical elements (indicators, patterns, price levels)
+- [ ] Generate structured image descriptions (JSON output)
+- [ ] Add confidence scoring for image analysis
+- [ ] Implement batch image processing
+- [ ] Add retry logic and error handling
+- [ ] Write unit tests for Claude vision calls
+
+### Smart Chunking with Claude (NEW)
+
+- [ ] Create `semantic_chunker.py` module
+- [ ] Implement heuristic structure detection (font size, indentation)
+- [ ] Add chapter/section boundary detection
+- [ ] Detect headings, lists, examples, definitions
+- [ ] Implement Claude-based structure refinement (selective)
+- [ ] Create chapter-level processing pipeline
+- [ ] Add semantic boundary detection
+- [ ] Implement chunk type classification (strategy, example, theory)
+- [ ] Create section hierarchy tracking
+- [ ] Write unit tests for chunking logic
+
+### Enhanced Data Models (NEW)
+
+- [ ] Create `ExtractedImage` dataclass
+- [ ] Create `ImageAnalysis` dataclass
+- [ ] Create `ImageReference` dataclass
+- [ ] Create `EnhancedChunk` dataclass (extends DocumentChunk)
+- [ ] Add `section_hierarchy` field to chunks
+- [ ] Add `chunk_type` field for content classification
+- [ ] Add `image_references` list to chunks
+- [ ] Add `combined_content` field (text + image descriptions)
+- [ ] Update DocumentMetadata with additional fields
+
+### Image-Text Linking (NEW)
+
+- [ ] Implement spatial proximity matching (images to text)
+- [ ] Add reference detection ("Figure X", "see above")
+- [ ] Create context window expansion near images
+- [ ] Link images to relevant chunks by page/position
+- [ ] Generate combined content for embedding
+- [ ] Implement anchor chunk creation for image-heavy sections
+- [ ] Write unit tests for linking logic
+
 ### Embedding Generation
 
-- [x] Set up AWS Bedrock client for embeddings
+- [x] Set up AWS Bedrock client for embeddings (Titan)
 - [x] Implement batch embedding generation
 - [x] Create embedder service class
 - [ ] Add embedding caching mechanism - _Deferred to Phase 6_
 - [x] Implement retry logic for API failures
 - [x] Add embedding dimension validation
+- [ ] Add multimodal embedding helper (combine text + image descriptions)
 - [ ] Write unit tests for embedding generation
 
 ### OpenSearch Deployment
@@ -144,6 +203,9 @@ This document tracks the detailed implementation progress across all phases. Eac
 - [x] Deploy OpenSearch domain
 - [x] Test OpenSearch connectivity
 - [x] Create index creation script
+- [ ] Update index schema for multimodal data (image_data, section_hierarchy)
+- [ ] Add fields for chunk_type and combined_content
+- [ ] Re-deploy updated index mapping
 
 ### Hybrid Search Implementation
 
@@ -177,6 +239,13 @@ This document tracks the detailed implementation progress across all phases. Eac
 - [x] Fix Python import configuration (pyrightconfig.json)
 - [x] Add local OpenSearch role ARN parameter
 - [x] Test with sample trading books
+- [ ] Update ingestion script for multimodal processing
+- [ ] Add image extraction step to pipeline
+- [ ] Implement Claude vision analysis in ingestion
+- [ ] Add image upload to S3 step
+- [ ] Update OpenSearch indexing with image metadata
+- [ ] Add progress tracking for image processing
+- [ ] Test end-to-end multimodal ingestion
 
 ### AWS Credentials & Access Management
 
@@ -190,7 +259,10 @@ This document tracks the detailed implementation progress across all phases. Eac
 ### Data Storage
 
 - [x] Deploy S3 buckets via CDK (documents, embeddings)
-- [ ] Implement S3 repository class - _Deferred to when needed_
+- [ ] Create S3 bucket for image storage (via CDK)
+- [ ] Implement S3 repository class for images
+- [ ] Add image upload functionality with proper naming
+- [ ] Create image retrieval by image_id
 - [ ] Add document upload functionality - _Deferred to when needed_
 - [ ] Create embedding backup mechanism - _Deferred to Phase 6_
 - [ ] Implement document versioning in S3 - _Deferred_
@@ -201,16 +273,35 @@ This document tracks the detailed implementation progress across all phases. Eac
 - [x] Test RAG retrieval with sample queries
 - [x] Validate embedding quality
 - [x] Test hybrid search relevance
+- [ ] Test image extraction from sample PDFs
+- [ ] Validate Claude vision analysis accuracy
+- [ ] Test image-text linking correctness
+- [ ] Verify combined content embedding quality
+- [ ] Test multimodal search (text queries match image descriptions)
+- [ ] Validate S3 image storage and retrieval
 - [ ] Benchmark search performance - _Deferred to Phase 6_
-- [ ] Create test*rag.py script for manual testing - \_Optional*
-- [ ] Document RAG system usage - _Deferred to Phase 3_
+- [ ] Create test_multimodal_rag.py script for validation
+- [ ] Document multimodal RAG system usage - _Deferred to Phase 3_
+
+### Cost Optimization & Monitoring (NEW)
+
+- [ ] Track Claude API costs (vision + structure analysis)
+- [ ] Implement cost estimation per book
+- [ ] Add selective Claude usage (heuristics first)
+- [ ] Monitor image storage costs
+- [ ] Optimize image resolution/compression
+- [ ] Create cost dashboard in CloudWatch
 
 **Phase 1 Completion Criteria**:
 
-- ✓ 8-10 trading books successfully ingested
-- ✓ OpenSearch domain deployed and operational
-- ✓ Hybrid search returning relevant results
-- ✓ RAG retrieval tested with trading queries
+- ✓ 8-10 trading books successfully ingested (text + images)
+- ✓ OpenSearch domain deployed with multimodal schema
+- ✓ Image extraction and Claude analysis working
+- ✓ Smart chunking preserving semantic boundaries
+- ✓ Image-text associations accurate
+- ✓ Hybrid search returning relevant results (text + images)
+- ✓ Multimodal RAG retrieval tested with trading queries
+- ✓ Cost per book under $0.50
 - ✓ All components unit tested
 
 ---
@@ -891,19 +982,19 @@ This document tracks the detailed implementation progress across all phases. Eac
 - **Phase 6**: ⬜ Not Started (0/31 tasks)
 - **Phase 7**: ⬜ Not Started (0/38 tasks)
 
-**Total Progress**: 74/348 tasks completed (21%)
+**Total Progress**: 74/404 tasks completed (18%)
 
 ---
 
 ## Current Sprint Focus
 
-**Sprint**: Phase 1 - Knowledge Base Pipeline (RAG Foundation) ✅ **COMPLETED**
-**Duration**: Completed
-**Goal**: Build document ingestion and RAG retrieval system
+**Sprint**: Phase 1 - Knowledge Base Pipeline (Multimodal RAG) 🔄 **IN PROGRESS**
+**Duration**: Enhancing with multimodal capabilities
+**Goal**: Build multimodal document ingestion and RAG retrieval system with image support
 
-**Status**: ✅ **PHASE COMPLETE** - All core functionality implemented, deployed, and tested
+**Status**: 🔄 **ENHANCING** - Adding Claude vision analysis and smart chunking
 
-**Achievements**:
+**Current Achievements**:
 
 - ✅ Document processor with PDF extraction and intelligent chunking
 - ✅ Embedding service with AWS Bedrock (Titan) integration
@@ -916,13 +1007,41 @@ This document tracks the detailed implementation progress across all phases. Eac
 - ✅ Hybrid search validated and working
 - ✅ S3 buckets deployed for documents and embeddings
 
+**In Progress - Multimodal Enhancement**:
+
+- 🔄 Image extraction from PDFs with position metadata
+- 🔄 Claude 3.5 Sonnet vision analysis for charts/diagrams
+- 🔄 Smart chunking with semantic boundary detection
+- 🔄 Heuristic structure extraction (headings, sections, lists)
+- 🔄 Image-text linking with spatial proximity
+- 🔄 S3 image storage with metadata
+- 🔄 Enhanced OpenSearch schema for multimodal data
+- 🔄 Combined text + image description embeddings
+- 🔄 End-to-end multimodal ingestion pipeline
+
+**Enhancement Goals**:
+
+- Support trading books with charts, diagrams, and technical illustrations
+- Preserve semantic structure and topic boundaries in chunking
+- Enable search across both text and visual content
+- Maintain cost efficiency (<$0.50 per book)
+- Achieve 95%+ accuracy in image-text associations
+
+**Technology Stack**:
+
+- **Vision Analysis**: Claude 3.5 Sonnet (Bedrock)
+- **Embeddings**: Amazon Titan (Bedrock) - unified for text + image descriptions
+- **Structure Detection**: Heuristics + selective Claude analysis
+- **Image Storage**: S3 with metadata
+- **Search**: OpenSearch with enhanced multimodal schema
+
 **What's Deferred**:
 
 - Unit/integration tests → Phase 7 (Testing & Refinement)
 - Performance optimization → Phase 6 (Automation & Scheduling)
-- RAG system documentation → Phase 3 (when integrated with LLM)
+- Full RAG system documentation → Phase 3 (when integrated with LLM)
 
-**Next Phase**: Phase 2 - Market Data Layer
+**Next After Enhancement**: Phase 2 - Market Data Layer
 
 - Market data ingestion (yfinance)
 - Technical indicators (SMA, RSI, MACD, Bollinger Bands, etc.)

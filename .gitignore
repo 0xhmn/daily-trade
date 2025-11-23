@@ -126,3 +126,4 @@ infrastructure/cdk.out/
 *.tmp
 *.temp
 .tmp/
+tmp
