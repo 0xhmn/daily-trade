@@ -29,6 +29,7 @@ class ExtractionMethod(Enum):
     GET_IMAGES = "get_images"  # Extract embedded raster images
     GET_SVG_IMAGE = "get_svg_image"  # Extract vector graphics as SVG
     GET_DRAWINGS = "get_drawings"  # Extract vector drawings with filters
+    GET_FULL_PAGE = "get_full_page"  # Render entire page as image
 
 
 @dataclass
@@ -46,6 +47,12 @@ class ExtractedImage:
     extracted_text: Optional[str] = None  # OCR text if present
     file_size: int = 0
     drawing_metadata: Optional[Dict[str, Any]] = None  # Metadata from get_drawings()
+    related_text_chunk_ids: List[str] = field(default_factory=list)
+    full_page_image_id: str = ""
+    text_embedding: List[float] = field(default_factory=list)
+    multimodal_embedding: List[float] = field(default_factory=list)
+    s3_uri: str = ""
+    document_metadata: Dict[str, Any] = field(default_factory=dict)  # Document-level metadata
 
     def __post_init__(self):
         """Calculate file size after initialization."""
@@ -208,6 +215,8 @@ class ImageProcessor:
             return self._extract_with_get_svg_image(page, page_num, document_id, seen_hashes)
         elif self.extraction_method == ExtractionMethod.GET_DRAWINGS:
             return self._extract_with_get_drawings(page, page_num, document_id, seen_hashes)
+        elif self.extraction_method == ExtractionMethod.GET_FULL_PAGE:
+            return self._extract_with_get_full_page(page, page_num, document_id, seen_hashes)
         else:
             logger.warning(f"Unknown extraction method: {self.extraction_method}")
             return []
@@ -471,6 +480,63 @@ class ImageProcessor:
 
         return page_images
 
+    def _extract_with_get_full_page(
+        self, page: fitz.Page, page_num: int, document_id: str, seen_hashes: set
+    ) -> List[ExtractedImage]:
+        """Render entire page as an image using get_pixmap()."""
+        page_images = []
+
+        try:
+            # Render page to image at specified DPI
+            mat = fitz.Matrix(self.dpi / 72, self.dpi / 72)
+            pix = page.get_pixmap(matrix=mat, alpha=False)
+            image_bytes = pix.tobytes("png")
+
+            # Check size limit
+            if len(image_bytes) > self.max_image_size_bytes:
+                logger.warning(
+                    f"Page {page_num} full-page image exceeds size limit: "
+                    f"{len(image_bytes) / 1024 / 1024:.2f}MB"
+                )
+                pix = None
+                return page_images
+
+            # Deduplicate (though unlikely for full pages)
+            img_hash = hashlib.md5(image_bytes).hexdigest()
+            if img_hash in seen_hashes:
+                logger.debug(f"Skipping duplicate full-page image for page {page_num}")
+                pix = None
+                return page_images
+            seen_hashes.add(img_hash)
+
+            # Create ExtractedImage for full page
+            # Use special ID format for full pages: {document_id}_fullpage_p{page_num:04d}
+            image_id = f"{document_id}_fullpage_p{page_num:04d}"
+
+            extracted_img = ExtractedImage(
+                image_id=image_id,
+                page_number=page_num,
+                bbox=(0, 0, page.rect.width, page.rect.height),
+                image_bytes=image_bytes,
+                image_format="PNG",
+                width=pix.width,
+                height=pix.height,
+                extraction_method="get_full_page",
+            )
+
+            page_images.append(extracted_img)
+            logger.debug(
+                f"Extracted full-page image {image_id}: {pix.width}x{pix.height}px, "
+                f"{len(image_bytes) / 1024:.1f}KB"
+            )
+
+            pix = None  # Clean up
+
+        except Exception as e:
+            logger.warning(f"Failed to extract full-page image from page {page_num}: {e}")
+
+        return page_images
+
     def _generate_image_id(self, document_id: str, page_num: int, image_idx: int) -> str:
         """
         Generate unique image identifier.
@@ -573,7 +639,10 @@ class ImageProcessor:
         }
 
     def upload_to_s3(
-        self, image: ExtractedImage, document_id: Optional[str] = None
+        self,
+        image: ExtractedImage,
+        document_id: Optional[str] = None,
+        s3_subfolder: Optional[str] = None,
     ) -> Optional[str]:
         """
         Upload image to S3 bucket organized by document_id.
@@ -581,6 +650,7 @@ class ImageProcessor:
         Args:
             image: ExtractedImage object
             document_id: Document identifier to use as S3 prefix (extracts from image_id if not provided)
+            s3_subfolder: Optional subfolder within document_id folder (e.g., "full_pages")
 
         Returns:
             S3 URI (s3://bucket/key) or None if upload fails
@@ -595,8 +665,11 @@ class ImageProcessor:
                 # image_id format: {document_id}_p{page_num:04d}_img{image_idx:03d}
                 document_id = image.image_id.split("_p")[0]
 
-            # Create S3 key with document_id as prefix for better organization
-            s3_key = f"images/{document_id}/{image.image_id}.{image.image_format.lower()}"
+            # Create S3 key with optional subfolder
+            if s3_subfolder:
+                s3_key = f"images/{document_id}/{s3_subfolder}/{image.image_id}.{image.image_format.lower()}"
+            else:
+                s3_key = f"images/{document_id}/{image.image_id}.{image.image_format.lower()}"
 
             # Upload to S3
             self.s3_client.put_object(
@@ -625,6 +698,7 @@ class ImageProcessor:
         self,
         images: List[ExtractedImage],
         document_id: Optional[str] = None,
+        s3_subfolder: Optional[str] = None,
         save_metadata: bool = True,
     ) -> Dict[str, Any]:
         """
@@ -633,6 +707,7 @@ class ImageProcessor:
         Args:
             images: List of ExtractedImage objects
             document_id: Document identifier to use as S3 prefix (extracts from image_id if not provided)
+            s3_subfolder: Optional subfolder within document_id folder (e.g., "full_pages")
             save_metadata: Whether to save metadata JSON file to current working directory
 
         Returns:
@@ -641,7 +716,7 @@ class ImageProcessor:
         uploaded = {}
 
         for image in images:
-            s3_uri = self.upload_to_s3(image, document_id)
+            s3_uri = self.upload_to_s3(image, document_id, s3_subfolder)
             if s3_uri:
                 uploaded[image.image_id] = s3_uri
 

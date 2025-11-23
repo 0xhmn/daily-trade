@@ -6,7 +6,7 @@ Handles PDF text extraction, chunking, and metadata management.
 
 import logging
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -24,6 +24,9 @@ class DocumentChunk:
     chunk_index: int
     metadata: Dict[str, Any]
     page_numbers: List[int]
+    related_extracted_image_ids: List[str] = field(default_factory=list)
+    full_page_image_id: str = ""
+    text_embedding: List[float] = field(default_factory=list)
 
 
 @dataclass
@@ -71,15 +74,15 @@ class DocumentProcessor:
         self.chunk_overlap = chunk_overlap
         self.min_chunk_size = min_chunk_size
 
-    def extract_text_from_pdf(self, pdf_path: Path) -> tuple[str, int]:
+    def extract_text_from_pdf(self, pdf_path: Path) -> tuple[List[tuple[str, int]], int]:
         """
-        Extract text from PDF file.
+        Extract text from PDF file with page tracking.
 
         Args:
             pdf_path: Path to PDF file
 
         Returns:
-            Tuple of (extracted_text, page_count)
+            Tuple of (list of (text, page_number) tuples, page_count)
         """
         logger.info(f"Extracting text from: {pdf_path}")
 
@@ -90,31 +93,41 @@ class DocumentProcessor:
             logger.warning(f"pdfplumber failed: {e}, falling back to PyPDF2")
             return self._extract_with_pypdf2(pdf_path)
 
-    def _extract_with_pdfplumber(self, pdf_path: Path) -> tuple[str, int]:
-        """Extract text using pdfplumber."""
-        text_parts = []
+    def _extract_with_pdfplumber(self, pdf_path: Path) -> tuple[List[tuple[str, int]], int]:
+        """
+        Extract text using pdfplumber with page tracking.
+
+        Returns:
+            Tuple of (list of (text, page_number) tuples, page_count)
+        """
+        text_with_pages = []
         with pdfplumber.open(pdf_path) as pdf:
             page_count = len(pdf.pages)
-            for page in pdf.pages:
+            for page_num, page in enumerate(pdf.pages, start=1):
                 text = page.extract_text()
                 if text:
-                    text_parts.append(text)
+                    text_with_pages.append((text, page_num))
 
-        return "\n\n".join(text_parts), page_count
+        return text_with_pages, page_count
 
-    def _extract_with_pypdf2(self, pdf_path: Path) -> tuple[str, int]:
-        """Extract text using PyPDF2."""
-        text_parts = []
+    def _extract_with_pypdf2(self, pdf_path: Path) -> tuple[List[tuple[str, int]], int]:
+        """
+        Extract text using PyPDF2 with page tracking.
+
+        Returns:
+            Tuple of (list of (text, page_number) tuples, page_count)
+        """
+        text_with_pages = []
         with open(pdf_path, "rb") as file:
             pdf_reader = PyPDF2.PdfReader(file)
             page_count = len(pdf_reader.pages)
 
-            for page in pdf_reader.pages:
+            for page_num, page in enumerate(pdf_reader.pages, start=1):
                 text = page.extract_text()
                 if text:
-                    text_parts.append(text)
+                    text_with_pages.append((text, page_num))
 
-        return "\n\n".join(text_parts), page_count
+        return text_with_pages, page_count
 
     def clean_text(self, text: str) -> str:
         """
@@ -137,75 +150,6 @@ class DocumentProcessor:
         cleaned_lines = [line.strip() for line in lines if len(line.strip()) > 20]
 
         return "\n".join(cleaned_lines)
-
-    def chunk_text(self, text: str, metadata: DocumentMetadata) -> List[DocumentChunk]:
-        """
-        Split text into overlapping chunks with sentence boundary preservation.
-
-        Args:
-            text: Text to chunk
-            metadata: Document metadata
-
-        Returns:
-            List of DocumentChunk objects
-        """
-        # Split into sentences
-        sentences = self._split_into_sentences(text)
-
-        chunks = []
-        current_chunk = []
-        current_size = 0
-        chunk_index = 0
-
-        for sentence in sentences:
-            sentence_size = len(sentence)
-
-            # Check if adding this sentence exceeds chunk size
-            if current_size + sentence_size > self.chunk_size and current_chunk:
-                # Create chunk
-                chunk_text = " ".join(current_chunk)
-                if len(chunk_text) >= self.min_chunk_size:
-                    chunks.append(
-                        DocumentChunk(
-                            text=chunk_text,
-                            chunk_index=chunk_index,
-                            metadata=self._create_chunk_metadata(metadata, chunk_index),
-                            page_numbers=[],  # TODO: Track page numbers
-                        )
-                    )
-                    chunk_index += 1
-
-                # Keep overlap sentences
-                overlap_size = 0
-                overlap_sentences = []
-                for sent in reversed(current_chunk):
-                    if overlap_size + len(sent) < self.chunk_overlap:
-                        overlap_sentences.insert(0, sent)
-                        overlap_size += len(sent)
-                    else:
-                        break
-
-                current_chunk = overlap_sentences
-                current_size = overlap_size
-
-            current_chunk.append(sentence)
-            current_size += sentence_size
-
-        # Add final chunk
-        if current_chunk:
-            chunk_text = " ".join(current_chunk)
-            if len(chunk_text) >= self.min_chunk_size:
-                chunks.append(
-                    DocumentChunk(
-                        text=chunk_text,
-                        chunk_index=chunk_index,
-                        metadata=self._create_chunk_metadata(metadata, chunk_index),
-                        page_numbers=[],
-                    )
-                )
-
-        logger.info(f"Created {len(chunks)} chunks from document")
-        return chunks
 
     def _split_into_sentences(self, text: str) -> List[str]:
         """
@@ -234,28 +178,106 @@ class DocumentProcessor:
             "document_type": doc_metadata.document_type,
         }
 
+    def chunk_text_with_pages(
+        self, text_with_pages: List[tuple[str, int]], metadata: DocumentMetadata
+    ) -> List[DocumentChunk]:
+        """
+        Split page-tracked text into overlapping chunks while preserving page numbers.
+
+        Args:
+            text_with_pages: List of (text, page_number) tuples
+            metadata: Document metadata
+
+        Returns:
+            List of DocumentChunk objects with page numbers tracked
+        """
+        # Create list of (sentence, page_number) tuples
+        sentences_with_pages = []
+        for page_text, page_num in text_with_pages:
+            cleaned_text = self.clean_text(page_text)
+            sentences = self._split_into_sentences(cleaned_text)
+            for sentence in sentences:
+                sentences_with_pages.append((sentence, page_num))
+
+        chunks = []
+        current_chunk = []
+        current_pages = set()
+        current_size = 0
+        chunk_index = 0
+
+        for sentence, page_num in sentences_with_pages:
+            sentence_size = len(sentence)
+
+            # Check if adding this sentence exceeds chunk size
+            if current_size + sentence_size > self.chunk_size and current_chunk:
+                # Create chunk
+                chunk_text = " ".join([s for s, _ in current_chunk])
+                if len(chunk_text) >= self.min_chunk_size:
+                    chunks.append(
+                        DocumentChunk(
+                            text=chunk_text,
+                            chunk_index=chunk_index,
+                            metadata=self._create_chunk_metadata(metadata, chunk_index),
+                            page_numbers=sorted(list(current_pages)),
+                        )
+                    )
+                    chunk_index += 1
+
+                # Keep overlap sentences
+                overlap_size = 0
+                overlap_sentences = []
+                overlap_pages = set()
+                for sent, pg in reversed(current_chunk):
+                    if overlap_size + len(sent) < self.chunk_overlap:
+                        overlap_sentences.insert(0, (sent, pg))
+                        overlap_pages.add(pg)
+                        overlap_size += len(sent)
+                    else:
+                        break
+
+                current_chunk = overlap_sentences
+                current_pages = overlap_pages
+                current_size = overlap_size
+
+            current_chunk.append((sentence, page_num))
+            current_pages.add(page_num)
+            current_size += sentence_size
+
+        # Add final chunk
+        if current_chunk:
+            chunk_text = " ".join([s for s, _ in current_chunk])
+            if len(chunk_text) >= self.min_chunk_size:
+                chunks.append(
+                    DocumentChunk(
+                        text=chunk_text,
+                        chunk_index=chunk_index,
+                        metadata=self._create_chunk_metadata(metadata, chunk_index),
+                        page_numbers=sorted(list(current_pages)),
+                    )
+                )
+
+        logger.info(f"Created {len(chunks)} chunks from document with page tracking")
+        return chunks
+
     def process_document(self, pdf_path: Path, metadata: DocumentMetadata) -> List[DocumentChunk]:
         """
-        Process a complete document.
+        Process a complete document with page tracking.
 
         Args:
             pdf_path: Path to PDF file
             metadata: Document metadata
 
         Returns:
-            List of processed chunks
+            List of processed chunks with page numbers
         """
-        # Extract text
-        text, page_count = self.extract_text_from_pdf(pdf_path)
+        # Extract text with page tracking
+        text_with_pages, page_count = self.extract_text_from_pdf(pdf_path)
         metadata.page_count = page_count
 
-        # Clean text
-        text = self.clean_text(text)
+        # Chunk text with page tracking
+        chunks = self.chunk_text_with_pages(text_with_pages, metadata)
 
-        # Chunk text
-        chunks = self.chunk_text(text, metadata)
-
-        logger.info(f"Processed {pdf_path.name}: " f"{page_count} pages, {len(chunks)} chunks")
+        logger.info(f"Processed {pdf_path.name}: {page_count} pages, {len(chunks)} chunks")
 
         return chunks
 

@@ -99,6 +99,46 @@ Access the application:
 - Backend API: http://localhost:8000
 - API Docs: http://localhost:8000/docs
 
+## Development Environment (mise)
+
+This project uses [mise](https://mise.jdx.dev) for development environment management.
+
+### What is mise.toml?
+
+**mise.toml manages your local development environment**, not your Python package:
+
+| Purpose            | mise.toml                             | pyproject.toml                 |
+| ------------------ | ------------------------------------- | ------------------------------ |
+| **Scope**          | Development environment               | Python package definition      |
+| **Manages**        | Tool versions (Python, Node, etc.)    | Package dependencies           |
+| **Auto-activates** | `.venv` when entering directory       | N/A                            |
+| **Defines**        | Tasks, environment variables          | Package metadata, build config |
+| **Replaces**       | pyenv, nvm, direnv, virtualenvwrapper | setup.py, setuptools config    |
+
+**How they work together:**
+
+1. `mise.toml` → Ensures Python 3.12 is installed and `.venv` is activated
+2. `backend/pyproject.toml` → Defines what gets installed (`pip install -e '.[dev]'`)
+
+### Setup mise
+
+**Trust the config** (one-time, in project directory):
+
+```bash
+cd /path/to/daily-trade
+mise trust
+```
+
+### Available Commands
+
+```bash
+mise run setup      # Create .venv and install all dependencies
+mise run install    # Install/update dependencies only
+mise run clean      # Remove .venv
+mise doctor         # Check mise configuration
+mise --help         # Show all commands
+```
+
 ## Development Workflow
 
 1. Create feature branch: `git checkout -b feature/your-feature`

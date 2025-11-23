@@ -1,0 +1,29 @@
+[tools]
+python = "3.12"
+
+[env]
+# Automatically activate .venv when entering directory
+_.python.venv = { path = ".venv", create = true }
+
+[tasks.setup]
+description = "Set up Python virtual environment and install dependencies"
+run = [
+    "python -m venv .venv",
+    "source .venv/bin/activate",
+    "pip install --upgrade pip",
+    "cd backend && pip install -e '.[dev]'",
+]
+
+[tasks.install]
+description = "Install project dependencies"
+run = [
+    "source .venv/bin/activate",
+    "cd backend && pip install -e '.[dev]'",
+]
+
+[tasks.clean]
+description = "Remove virtual environment"
+run = "rm -rf .venv"
+
+[settings]
+experimental = true

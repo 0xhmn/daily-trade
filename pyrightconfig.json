@@ -1,5 +1,5 @@
 {
-  "extraPaths": ["backend"],
+  "extraPaths": [".", "backend"],
   "pythonVersion": "3.12",
   "pythonPlatform": "Linux",
   "executionEnvironments": [
@@ -7,13 +7,13 @@
       "root": "backend",
       "pythonVersion": "3.12",
       "pythonPlatform": "Linux",
-      "extraPaths": []
+      "extraPaths": ["."]
     },
     {
       "root": "scripts",
       "pythonVersion": "3.12",
       "pythonPlatform": "Linux",
-      "extraPaths": ["backend"]
+      "extraPaths": ["."]
     }
   ]
 }

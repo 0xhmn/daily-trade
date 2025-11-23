@@ -31,6 +31,7 @@ python-multipart
 python-dotenv
 loguru
 tenacity
+vulture
 
 # Date & Time
 python-dateutil

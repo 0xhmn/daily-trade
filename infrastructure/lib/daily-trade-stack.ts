@@ -309,7 +309,7 @@ export class DailyTradeStack extends cdk.Stack {
       domainName: "daily-trade-knowledge-001",
       capacity: {
         dataNodes: 2,
-        dataNodeInstanceType: "t3.small.search",
+        dataNodeInstanceType: "t3.medium.search",
         multiAzWithStandbyEnabled: false,
       },
       ebs: {
