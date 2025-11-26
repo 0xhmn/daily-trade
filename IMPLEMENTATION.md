@@ -1,12 +1,23 @@
 # Implementation Progress Tracker
 
 **Project**: AI-Powered Trading Assistant
-**Last Updated**: November 20, 2025
-**Current Phase**: Phase 2 - Market Data Layer (Next)
+**Last Updated**: November 24, 2025
+**Current Phase**: Phase 1 - Knowledge Base Pipeline (Multimodal RAG) - COMPLETED ✅
+**Next Phase**: Phase 2 - RAG & Signal Generation (Building functional platform with mock data first)
 
 ---
 
 ## Overview
+
+**Phase Strategy**: Build a functional UI-first platform before adding real market data. This allows testing the complete user experience with mock data, then integrate real market intelligence later.
+
+**Phase Order**:
+
+1. ✅ Phase 0-1: Infrastructure & Knowledge Base (COMPLETED)
+2. 🎯 Phase 2-4: Signal Generation → Backend API → Frontend UI (Current Focus - Non-Agentic)
+3. 📊 Phase 5: Market Data Layer (Deferred - add real market data after UI works)
+4. 🤖 Phase 6: Automation & Agentic Intelligence (Add autonomous agents)
+5. ✅ Phase 7: Testing & Refinement
 
 This document tracks the detailed implementation progress across all phases. Each phase is broken down into specific tasks that can be checked off as they are completed.
 
@@ -14,6 +25,140 @@ This document tracks the detailed implementation progress across all phases. Eac
 
 - [HLD.md](./HLD.md) - High Level Design
 - [LLD.md](./LLD.md) - Low Level Design
+
+---
+
+## Agent Architecture Strategy
+
+**Core Philosophy**: Start simple with fixed pipelines, add agents for complexity and autonomy
+
+### When to Use Agents vs Fixed Pipelines
+
+**Use Fixed Pipelines When**:
+
+- Process is always the same (signal generation core logic)
+- Need predictable behavior (trade execution)
+- Debugging must be simple
+- Performance is critical
+- Building MVP/testing UX
+
+**Use Agents When**:
+
+- Task requires multiple steps that vary by situation (daily analysis)
+- Need to handle unexpected scenarios (user Q&A)
+- Want autonomous decision-making (strategy optimization)
+- User input is vague/exploratory (research queries)
+- Need to compare multiple approaches (best strategy selection)
+
+### Agent Use Cases Planned
+
+#### Phase 6+: Autonomous Agents
+
+1. **Daily Analysis Agent** ⭐ (Phase 6)
+
+   - Autonomously analyzes watchlist
+   - Adapts analysis depth based on market conditions
+   - Skips stocks with no setup (saves costs)
+   - Prioritizes most promising opportunities
+   - **Tools**: get_watchlist, fetch_market_data, calculate_indicators, search_knowledge_base, generate_signal, store_signal, notify_user
+
+2. **Strategy Optimization Agent** ⭐⭐⭐ (Phase 6+)
+
+   - Finds BEST trading strategy (not just "a" strategy)
+   - Compares multiple strategies (Support Bounce, Breakout, Mean Reversion)
+   - Optimizes parameters (entry, stop-loss, holding period)
+   - Validates against historical performance
+   - Provides comparative reasoning
+   - **Tools**: identify_market_regime, search_strategies_by_regime, evaluate_strategy_applicability, calculate_optimal_entry, calculate_optimal_stop, estimate_holding_period, assess_strategy_risks, compare_strategies, validate_against_historical
+
+3. **Interactive Research Agent** ⭐⭐ (Phase 6+)
+
+   - Handles complex multi-source queries
+   - Example: "Why is NVDA at support? Show similar setups"
+   - Autonomously gathers required information
+   - Synthesizes comprehensive answers with citations
+   - **Tools**: fetch_market_data, calculate_support_resistance, search_knowledge_base, search_historical_patterns, synthesize_answer
+
+4. **Trade Validation Agent** (Phase 7+)
+
+   - Validates trade ideas before entry
+   - Example: "Should I buy TSLA at $250?"
+   - Comprehensive risk/reward analysis
+   - Strategy compatibility check
+   - **Tools**: get_market_data, calculate_risk_reward, search_strategies, check_historical_performance, evaluate_signal_strength
+
+5. **Portfolio Rebalancing Agent** (Phase 7+)
+
+   - Monitors sector concentration
+   - Identifies over-exposed positions
+   - Proposes rebalancing actions
+   - **Tools**: get_current_positions, calculate_sector_exposure, check_correlation, search_diversification_strategies, generate_rebalancing_plan
+
+6. **Learning Agent** (Advanced - Phase 8+)
+   - Explains WHY signals were generated
+   - Educational responses for beginners
+   - Step-by-step reasoning breakdown
+   - **Tools**: retrieve_signal_details, search_concept_basics, synthesize_educational_content
+
+### Framework Selection (Deferred Decision)
+
+**Options Evaluated**:
+
+1. **LangGraph** ⭐⭐ - Graph-based workflow, explicit state machine, production-ready
+2. **LangChain Agents** ⭐ - Quick prototyping, mature ecosystem, less control
+3. **Bedrock Agents** ⭐⭐⭐ - Fully managed, AWS-native, limited customization
+4. **Custom Agent** - Complete control, trading-optimized, more maintenance
+
+**Decision Point**: Phase 6 (after UI complete, before adding automation)
+
+### Implementation Strategy
+
+**Phases 2-4** (Current): Non-Agentic Approach
+
+- Fixed signal generation pipeline
+- Predictable behavior for UI development
+- Easier to debug and test
+- Faster to build and iterate
+
+**Phase 6+**: Add Agents for Automation
+
+- Daily Analysis Agent (autonomous signal generation)
+- Strategy Optimization Agent (best strategy selection)
+- Interactive Research Agent (user Q&A)
+
+**Critical Paths Stay Non-Agentic**:
+
+- Signal generation core logic (reliability)
+- Trade entry/exit execution (predictability)
+- Real-time market data fetching (performance)
+
+**Agent Reasoning Loop Example**:
+
+```python
+# Multi-iteration agent finding best strategy
+Iteration 1: Fetch AAPL market data
+Iteration 2: Calculate technical indicators
+Iteration 3: Identify market regime ("consolidating uptrend")
+Iteration 4: Search strategies for regime
+Iteration 5-7: Evaluate each strategy applicability
+Iteration 8-9: Optimize parameters for top strategies
+Iteration 10-11: Assess risks for each
+Iteration 12: Compare strategies by R/R and win rate
+Iteration 13: Validate top strategy historically
+Iteration 14: FINAL_ANSWER with best strategy + reasoning
+```
+
+### Key Benefits of Agentic Approach
+
+For **optimal strategy selection**:
+
+1. **Multi-Strategy Comparison** - Evaluates all applicable strategies
+2. **Parameter Optimization** - Finds optimal entry/stop/target for situation
+3. **Context-Aware Reasoning** - Considers earnings, sector trends, volatility
+4. **Historical Validation** - Checks strategy's past performance in similar conditions
+5. **Adaptive Depth** - Digs deeper for complex situations, lighter for obvious ones
+6. **Risk Quantification** - Specific risks with impact assessment for THIS trade
+7. **Transparency** - Shows WHY this strategy is best vs alternatives
 
 ---
 
@@ -109,11 +254,11 @@ This document tracks the detailed implementation progress across all phases. Eac
 
 ---
 
-## Phase 1: Knowledge Base Pipeline (RAG Foundation) 🔄
+## Phase 1: Knowledge Base Pipeline (RAG Foundation) ✅
 
 **Goal**: Build multimodal document ingestion and RAG retrieval system with image support
 
-**Status**: IN PROGRESS - Enhancing with multimodal capabilities
+**Status**: COMPLETED - Multimodal ingestion pipeline operational
 
 ### Document Processing (Core)
 
@@ -127,26 +272,26 @@ This document tracks the detailed implementation progress across all phases. Eac
 
 ### Image Extraction & Processing (NEW)
 
-- [ ] Create `image_processor.py` module
-- [ ] Implement PDF image extraction with pdfplumber
-- [ ] Extract image position metadata (page, bbox, coordinates)
-- [ ] Add OCR for text-heavy images (optional enhancement)
-- [ ] Create ImageProcessor service class
-- [ ] Implement S3 upload for extracted images
-- [ ] Generate unique image IDs with document context
-- [ ] Write unit tests for image extraction
+- [x] Create `image_processor.py` module
+- [x] Implement PDF image extraction with PyMuPDF (multiple methods)
+- [x] Extract image position metadata (page, bbox, coordinates)
+- [ ] Add OCR for text-heavy images (optional enhancement) - _Deferred_
+- [x] Create ImageProcessor service class
+- [x] Implement S3 upload for extracted images
+- [x] Generate unique image IDs with document context
+- [ ] Write unit tests for image extraction - _Deferred to Phase 7_
 
 ### Claude Vision Integration (NEW)
 
-- [ ] Set up Bedrock client for Claude 3.5 Sonnet
-- [ ] Create vision analysis prompt templates for trading content
-- [ ] Implement image analysis with Claude (charts, diagrams, tables)
-- [ ] Extract technical elements (indicators, patterns, price levels)
-- [ ] Generate structured image descriptions (JSON output)
-- [ ] Add confidence scoring for image analysis
-- [ ] Implement batch image processing
-- [ ] Add retry logic and error handling
-- [ ] Write unit tests for Claude vision calls
+- [x] Set up Bedrock client for Nova Vision (not Claude)
+- [x] Create vision analysis prompt templates for trading content
+- [x] Implement image analysis with Nova (charts, diagrams, pages)
+- [x] Extract technical elements (indicators, patterns, price levels)
+- [x] Generate structured image descriptions (JSON output)
+- [ ] Add confidence scoring for image analysis - _Deferred_
+- [x] Implement batch image processing
+- [x] Add retry logic and error handling
+- [ ] Write unit tests for vision calls - _Deferred to Phase 7_
 
 ### Smart Chunking with Claude (NEW)
 
@@ -163,36 +308,36 @@ This document tracks the detailed implementation progress across all phases. Eac
 
 ### Enhanced Data Models (NEW)
 
-- [ ] Create `ExtractedImage` dataclass
-- [ ] Create `ImageAnalysis` dataclass
-- [ ] Create `ImageReference` dataclass
-- [ ] Create `EnhancedChunk` dataclass (extends DocumentChunk)
-- [ ] Add `section_hierarchy` field to chunks
-- [ ] Add `chunk_type` field for content classification
-- [ ] Add `image_references` list to chunks
-- [ ] Add `combined_content` field (text + image descriptions)
-- [ ] Update DocumentMetadata with additional fields
+- [x] Create `ExtractedImage` dataclass
+- [ ] Create `ImageAnalysis` dataclass - _Simplified in vision service_
+- [ ] Create `ImageReference` dataclass - _Simplified in linking_
+- [x] Create `DocumentChunk` dataclass (core model)
+- [ ] Add `section_hierarchy` field to chunks - _Deferred (smart chunking)_
+- [ ] Add `chunk_type` field for content classification - _Deferred_
+- [x] Add `image_references` list to chunks (via cross-linking)
+- [x] Add `combined_content` field (text + image descriptions)
+- [x] Update DocumentMetadata with additional fields
 
 ### Image-Text Linking (NEW)
 
-- [ ] Implement spatial proximity matching (images to text)
-- [ ] Add reference detection ("Figure X", "see above")
-- [ ] Create context window expansion near images
-- [ ] Link images to relevant chunks by page/position
-- [ ] Generate combined content for embedding
-- [ ] Implement anchor chunk creation for image-heavy sections
-- [ ] Write unit tests for linking logic
+- [x] Implement spatial proximity matching (images to text)
+- [ ] Add reference detection ("Figure X", "see above") - _Deferred_
+- [x] Create context window expansion near images
+- [x] Link images to relevant chunks by page/position
+- [x] Generate combined content for embedding
+- [x] Implement cross-reference tracking system
+- [ ] Write unit tests for linking logic - _Deferred to Phase 7_
 
 ### Embedding Generation
 
-- [x] Set up AWS Bedrock client for embeddings (Titan)
+- [x] Set up AWS Bedrock client for embeddings (Nova/Titan)
 - [x] Implement batch embedding generation
-- [x] Create embedder service class
+- [x] Create multimodal embedder service class
 - [ ] Add embedding caching mechanism - _Deferred to Phase 6_
 - [x] Implement retry logic for API failures
 - [x] Add embedding dimension validation
-- [ ] Add multimodal embedding helper (combine text + image descriptions)
-- [ ] Write unit tests for embedding generation
+- [x] Add multimodal embedding helper (text + image embeddings)
+- [ ] Write unit tests for embedding generation - _Deferred to Phase 7_
 
 ### OpenSearch Deployment
 
@@ -239,13 +384,29 @@ This document tracks the detailed implementation progress across all phases. Eac
 - [x] Fix Python import configuration (pyrightconfig.json)
 - [x] Add local OpenSearch role ARN parameter
 - [x] Test with sample trading books
-- [ ] Update ingestion script for multimodal processing
-- [ ] Add image extraction step to pipeline
-- [ ] Implement Claude vision analysis in ingestion
-- [ ] Add image upload to S3 step
-- [ ] Update OpenSearch indexing with image metadata
-- [ ] Add progress tracking for image processing
-- [ ] Test end-to-end multimodal ingestion
+- [x] Update ingestion script for multimodal processing
+- [x] Add image extraction step to pipeline
+- [x] Implement Nova vision analysis in ingestion
+- [x] Add image upload to S3 step
+- [x] Update OpenSearch indexing with image metadata
+- [x] Add progress tracking for image processing
+- [x] Test end-to-end multimodal ingestion
+
+### Ingestion System Improvements (SCALABILITY)
+
+- [ ] Implement checkpoint system for resumable ingestion
+- [ ] Add page-level progress tracking
+- [ ] Create ingestion state persistence (JSON/DynamoDB)
+- [ ] Implement failure recovery mechanism
+- [ ] Add retry logic for individual pages/images
+- [ ] Create partial ingestion capability (resume from checkpoint)
+- [ ] Add transaction-like rollback for failed ingestions
+- [ ] Implement parallel processing for large documents
+- [ ] Add ingestion job status API endpoint
+- [ ] Create ingestion monitoring dashboard
+- [ ] Add cost estimation before starting ingestion
+- [ ] Implement rate limiting for AWS API calls
+- [ ] Write integration tests for error scenarios
 
 ### AWS Credentials & Access Management
 
@@ -395,18 +556,29 @@ This document tracks the detailed implementation progress across all phases. Eac
 
 ---
 
-## Phase 3: RAG & Signal Generation (Core Intelligence)
+## Phase 2: RAG & Signal Generation (Core Intelligence)
 
-**Goal**: Build the AI-powered signal generation system
+**Goal**: Build AI-powered signal generation with hybrid architecture (custom control + LangChain extensibility)
+
+**Architecture Decision**: Hybrid approach using LangChain's retriever abstraction while maintaining custom control over prompting, parsing, and multimodal context. This enables future GraphRAG integration.
+
+### RAG Architecture Setup
+
+- [ ] Install `langchain-core` (lightweight, ~5 dependencies only)
+- [ ] Create `BaseRetriever` wrapper for existing OpenSearch service
+- [ ] Implement `MultimodalOpenSearchRetriever` class
+- [ ] Preserve multimodal context in Document metadata
+- [ ] Test retriever with existing hybrid search
+- [ ] Document retriever interface
 
 ### RAG Service Integration
 
-- [ ] Create RAGService class
-- [ ] Integrate LangChain for RAG orchestration
+- [ ] Create TradingRAGService class (custom, not LangChain chains)
+- [ ] Integrate retriever abstraction
 - [ ] Implement query preprocessing
-- [ ] Add context retrieval from OpenSearch
+- [ ] Add context retrieval via retriever interface
 - [ ] Implement relevance filtering
-- [ ] Add source citation extraction
+- [ ] Add source citation extraction from metadata
 - [ ] Write unit tests for RAG service
 
 ### Bedrock LLM Integration
@@ -728,19 +900,82 @@ This document tracks the detailed implementation progress across all phases. Eac
 
 ---
 
-## Phase 6: Automation & Scheduling
+## Phase 6: Automation & Agentic Intelligence
 
-**Goal**: Implement automated daily analysis and notifications
+**Goal**: Implement automated daily analysis with optional agentic capabilities
 
-### Daily Analysis Job
+**Strategy**: Start with fixed pipeline automation, add agent framework when ready for advanced features
 
-- [ ] Create daily_analysis.py job script
+### Daily Analysis Job (Non-Agentic - Initial)
+
+- [ ] Create daily_analysis.py job script (fixed pipeline)
 - [ ] Implement watchlist iteration
 - [ ] Add batch signal generation
 - [ ] Create signal persistence logic
 - [ ] Add job logging
 - [ ] Implement error recovery
 - [ ] Test job execution
+
+### Agent Framework Selection & Setup (Optional Enhancement)
+
+- [ ] Evaluate agent frameworks (LangGraph, LangChain, Bedrock Agents)
+- [ ] Document framework decision and rationale
+- [ ] Install selected agent framework
+- [ ] Create agent base classes and utilities
+- [ ] Set up agent state management
+- [ ] Implement agent tool registry
+- [ ] Create agent monitoring/logging
+- [ ] Write agent framework tests
+
+### Daily Analysis Agent (Agentic - Optional)
+
+- [ ] Create DailyAnalysisAgent class
+- [ ] Implement autonomous watchlist processing
+- [ ] Add adaptive analysis depth logic
+- [ ] Implement setup detection and filtering
+- [ ] Add opportunity prioritization
+- [ ] Create agent reasoning loop
+- [ ] Implement tool selection logic
+- [ ] Add cost optimization (skip low-probability stocks)
+- [ ] Test agent vs fixed pipeline performance
+- [ ] Document agent behavior and decision patterns
+
+### Strategy Optimization Agent (Agentic - Optional)
+
+- [ ] Create StrategyOptimizationAgent class
+- [ ] Implement market regime identification
+- [ ] Add multi-strategy discovery and evaluation
+- [ ] Implement parameter optimization logic
+- [ ] Add strategy comparison framework
+- [ ] Create historical validation logic
+- [ ] Implement risk assessment for each strategy
+- [ ] Add reasoning explanation generation
+- [ ] Test strategy quality improvement
+- [ ] Document optimal strategy selection process
+
+### Agent Tools Implementation
+
+- [ ] Create identify_market_regime tool
+- [ ] Implement search_strategies_by_regime tool
+- [ ] Add evaluate_strategy_applicability tool
+- [ ] Create calculate_optimal_entry tool
+- [ ] Implement calculate_optimal_stop tool
+- [ ] Add estimate_holding_period tool
+- [ ] Create assess_strategy_risks tool
+- [ ] Implement compare_strategies tool
+- [ ] Add validate_against_historical tool
+- [ ] Write tool integration tests
+
+### Interactive Research Agent (Agentic - Optional)
+
+- [ ] Create InteractiveResearchAgent class
+- [ ] Implement complex query understanding
+- [ ] Add multi-source information gathering
+- [ ] Create answer synthesis logic
+- [ ] Implement citation and source tracking
+- [ ] Add conversational context management
+- [ ] Test with varied query types
+- [ ] Document research patterns
 
 ### ECS Scheduled Task
 
@@ -904,7 +1139,110 @@ This document tracks the detailed implementation progress across all phases. Eac
 
 ---
 
-## Future Enhancements (Phase 8+)
+## Phase 8: GraphRAG & Knowledge Graph Integration
+
+**Goal**: Enhance RAG with graph-based entity relationships and multi-hop reasoning
+
+**Prerequisites**: Phase 2 RAG service with BaseRetriever abstraction
+
+### Neptune Graph Database Setup
+
+- [ ] Deploy Neptune cluster via CDK
+- [ ] Configure VPC and security groups
+- [ ] Create graph schema for trading entities
+- [ ] Define entity types (companies, indicators, patterns, strategies)
+- [ ] Define relationship types (uses, relates_to, contradicts, extends)
+- [ ] Deploy Neptune workbench for development
+- [ ] Create backup and restore procedures
+
+### Knowledge Graph Construction
+
+- [ ] Extract entities from indexed documents
+- [ ] Identify relationships between concepts
+- [ ] Create entity extraction pipeline
+- [ ] Build relationship inference logic
+- [ ] Populate Neptune with trading knowledge graph
+- [ ] Add temporal relationships (market_condition → strategy)
+- [ ] Create document-to-entity links
+- [ ] Validate graph completeness
+
+### Graph Retriever Implementation
+
+- [ ] Create `TradingGraphRetriever(BaseRetriever)` class
+- [ ] Implement entity extraction from queries
+- [ ] Add graph traversal logic (depth-limited)
+- [ ] Implement path ranking algorithm
+- [ ] Format graph paths as Documents
+- [ ] Add metadata preservation
+- [ ] Write unit tests for graph retriever
+
+### Ensemble Retriever Setup
+
+- [ ] Install `langchain-community` for EnsembleRetriever
+- [ ] Combine MultimodalOpenSearchRetriever + TradingGraphRetriever
+- [ ] Configure retriever weights (vector: 0.7, graph: 0.3)
+- [ ] Implement weight tuning mechanism
+- [ ] Add A/B testing for retriever combinations
+- [ ] Test ensemble with various queries
+- [ ] Document retriever selection strategy
+
+### Multi-Hop Reasoning
+
+- [ ] Implement graph path expansion
+- [ ] Add relationship following logic
+- [ ] Create concept chain extraction
+- [ ] Implement answer synthesis from multiple paths
+- [ ] Add contradiction detection
+- [ ] Test complex multi-hop queries
+- [ ] Optimize graph query performance
+
+### Integration with Signal Generation
+
+- [ ] Update TradingRAGService to use ensemble retriever
+- [ ] Add graph context to prompts
+- [ ] Implement entity-based signal validation
+- [ ] Add relationship-based confidence scoring
+- [ ] Test signal quality improvement
+- [ ] Measure GraphRAG impact on accuracy
+
+### Performance & Optimization
+
+- [ ] Optimize graph queries
+- [ ] Implement graph query caching
+- [ ] Add Neptune read replicas
+- [ ] Monitor query latency
+- [ ] Tune traversal depth limits
+- [ ] Optimize relationship filtering
+
+### Testing & Validation
+
+- [ ] Test graph construction accuracy
+- [ ] Validate entity extraction
+- [ ] Test relationship inference
+- [ ] Verify multi-hop reasoning
+- [ ] Compare GraphRAG vs vector-only performance
+- [ ] Measure query response times
+- [ ] Document GraphRAG benefits
+
+**Phase 8 Completion Criteria**:
+
+- ✓ Neptune cluster deployed and operational
+- ✓ Knowledge graph populated with trading concepts
+- ✓ Graph retriever integrated via ensemble
+- ✓ Multi-hop reasoning working
+- ✓ Signal quality improved measurably
+- ✓ Performance acceptable (<2s query time)
+
+---
+
+## Future Enhancements (Phase 9+)
+
+### Additional Context Sources
+
+- [ ] Add SQL retriever for structured market data queries
+- [ ] Integrate time-series database for historical patterns
+- [ ] Add news/sentiment data retriever
+- [ ] Implement multi-modal video analysis retriever
 
 ### Additional Features
 
@@ -979,20 +1317,20 @@ This document tracks the detailed implementation progress across all phases. Eac
 - **Phase 3**: ⬜ Not Started (0/38 tasks)
 - **Phase 4**: ⬜ Not Started (0/53 tasks)
 - **Phase 5**: ⬜ Not Started (0/50 tasks)
-- **Phase 6**: ⬜ Not Started (0/31 tasks)
+- **Phase 6**: ⬜ Not Started (0/90 tasks - Enhanced with agentic capabilities)
 - **Phase 7**: ⬜ Not Started (0/38 tasks)
+- **Phase 8**: ⬜ Not Started (0/56 tasks)
 
-**Total Progress**: 74/404 tasks completed (18%)
+**Total Progress**: 74/463 tasks completed (16%)
 
 ---
 
 ## Current Sprint Focus
 
-**Sprint**: Phase 1 - Knowledge Base Pipeline (Multimodal RAG) 🔄 **IN PROGRESS**
-**Duration**: Enhancing with multimodal capabilities
+**Sprint**: Phase 1 - Knowledge Base Pipeline (Multimodal RAG) ✅ **COMPLETED**
 **Goal**: Build multimodal document ingestion and RAG retrieval system with image support
 
-**Status**: 🔄 **ENHANCING** - Adding Claude vision analysis and smart chunking
+**Status**: ✅ **COMPLETED** - Multimodal ingestion operational, can ingest PDFs with images
 
 **Current Achievements**:
 
@@ -1035,19 +1373,56 @@ This document tracks the detailed implementation progress across all phases. Eac
 - **Image Storage**: S3 with metadata
 - **Search**: OpenSearch with enhanced multimodal schema
 
-**What's Deferred**:
+**Multimodal Components Completed**:
+
+- ✅ Image extraction (GET_IMAGES, GET_SVG_IMAGE, GET_DRAWINGS methods)
+- ✅ Nova Vision integration for chart/diagram analysis
+- ✅ Full-page image rendering for context
+- ✅ Cross-reference linking between images and text
+- ✅ Dual embeddings (text + multimodal)
+- ✅ 3-index OpenSearch architecture
+- ✅ S3 image storage with metadata
+- ✅ Document deletion by source_file across all indexes
+
+**Deferred for Later**:
 
 - Unit/integration tests → Phase 7 (Testing & Refinement)
 - Performance optimization → Phase 6 (Automation & Scheduling)
-- Full RAG system documentation → Phase 3 (when integrated with LLM)
+- Ingestion checkpointing/recovery → Phase 2 (after UI complete)
+- Smart semantic chunking → Future enhancement
 
-**Next After Enhancement**: Phase 2 - Market Data Layer
+**Next Steps** (UI-First Strategy):
 
-- Market data ingestion (yfinance)
-- Technical indicators (SMA, RSI, MACD, Bollinger Bands, etc.)
-- Pattern detection (candlestick patterns, support/resistance)
-- DynamoDB setup for user data
-- Historical data fetching and caching
+**Phase 2: RAG & Signal Generation** (Mock Data)
+
+- Build RAG service with LangChain
+- Integrate Claude 3 Sonnet for signal generation
+- Implement prompt templates and citation extraction
+- Use mock market data for testing
+- Generate signals with confidence scoring
+
+**Phase 3: Backend API**
+
+- Build FastAPI application with REST endpoints
+- Create Pydantic models and validation
+- Implement signal/watchlist/journal endpoints
+- Deploy API Gateway with CDK
+- Test with mock data
+
+**Phase 4: Frontend Dashboard**
+
+- Build React UI with TypeScript
+- Create dashboard, watchlist, journal components
+- Integrate with Backend API
+- Test complete user flows with mock signals
+
+**Phase 5: Market Data Layer** (Real Data Integration)
+
+- Integrate yfinance for real stock data
+- Calculate technical indicators
+- Replace mock data with real market intelligence
+- Deploy DynamoDB for user state
+- Enable live daily analysis
 
 **Reference Documentation**:
 
@@ -1057,4 +1432,4 @@ This document tracks the detailed implementation progress across all phases. Eac
 
 ---
 
-**Last Updated**: November 20, 2025
+**Last Updated**: November 24, 2025
