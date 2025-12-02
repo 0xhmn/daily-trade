@@ -1,0 +1,46 @@
+{
+  "style": "swing",
+  "version": "1.0",
+  "description": "Swing trading focuses on capturing moves over 3-10 days using technical analysis",
+  "system_prompt": {
+    "role": "You are an expert swing trading analyst with deep knowledge of technical analysis, chart patterns, and risk management. You generate precise, actionable trading signals for swing trades (3-10 day holding periods) based on comprehensive market analysis and historical trading knowledge."
+  },
+  "signal_prompt": {
+    "template": "Based on the provided trading knowledge and current market data, generate a precise swing trading signal for {symbol}.\n\n{context}\n\n## Task:\nGenerate a trading signal in JSON format with the following structure:\n\n{{\n  \"signal_type\": \"BUY\" or \"SELL\" or \"HOLD\",\n  \"strategy_name\": \"Name of the swing trading strategy (e.g., Support Bounce, Breakout, etc.)\",\n  \"entry_price\": <float>,\n  \"target_price\": <float>,\n  \"stop_loss\": <float>,\n  \"holding_period_days\": <int between 3-10>,\n  \"reasoning\": \"Detailed explanation of why this signal was generated\",\n  \"key_factors\": [\n    \"Factor 1\",\n    \"Factor 2\",\n    \"Factor 3\"\n  ]\n}}\n\n## Requirements:\n1. **Entry Price**: Should be near current price or at a specific technical level\n2. **Target Price**: Based on resistance levels, measured moves, or R/R ratio\n3. **Stop Loss**: Below support (BUY) or above resistance (SELL)\n4. **Risk/Reward**: Minimum 1.5:1 ratio\n5. **Holding Period**: Must be 3-10 days for swing trades\n6. **Reasoning**: Must reference specific indicators, patterns, or knowledge from sources\n7. **Strategy**: Must match the market setup identified\n\n## Signal Type Guidelines:\n- **BUY**: When bullish setup with clear support, strong indicators, uptrend confirmation\n- **SELL**: When bearish setup with clear resistance, weak indicators, downtrend confirmation\n- **HOLD**: When insufficient confidence, conflicting signals, or no clear setup\n\nRespond ONLY with valid JSON. No additional commentary.",
+    "schema_example": {
+      "signal_type": "BUY",
+      "strategy_name": "Support Bounce",
+      "entry_price": 180.5,
+      "target_price": 190.0,
+      "stop_loss": 176.0,
+      "holding_period_days": 7,
+      "reasoning": "RSI oversold + triple-tested support + bullish MACD divergence",
+      "key_factors": [
+        "RSI below 30 (oversold)",
+        "Support tested 3 times at $178",
+        "Bullish MACD divergence"
+      ]
+    }
+  },
+  "query_patterns": {
+    "oversold_rsi": "oversold RSI swing trade support bounce strategy",
+    "overbought_rsi": "overbought RSI swing trade resistance rejection",
+    "support_bounce": "support bounce swing trade entry exit stop loss",
+    "resistance_breakout": "resistance breakout swing trade momentum",
+    "consolidation": "consolidation range swing trade breakout setup",
+    "trend_continuation": "trend continuation swing trade pullback entry"
+  },
+  "validation_rules": {
+    "holding_period": {
+      "min": 3,
+      "max": 10,
+      "unit": "days"
+    },
+    "risk_reward_min": 1.5,
+    "stop_loss_percentage": {
+      "min": 2.0,
+      "max": 8.0,
+      "description": "Stop loss should be 2-8% from entry for swing trades"
+    }
+  }
+}

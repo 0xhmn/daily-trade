@@ -16,8 +16,7 @@ pandas-ta
 yfinance
 
 # AI & ML
-langchain
-langchain-community
+langchain-core
 opensearch-py
 requests-aws4auth
 tqdm

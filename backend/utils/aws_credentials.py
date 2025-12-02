@@ -19,25 +19,26 @@ logger = logging.getLogger(__name__)
 
 
 def get_credentials_for_opensearch(
-    region: str = "us-east-1", local_role_arn: Optional[str] = None
+    region: str = "us-east-1", stage: str = "local", local_role_arn: Optional[str] = None
 ) -> boto3.Session:
     """
-    Get appropriate AWS credentials based on STAGE environment variable.
+    Get appropriate AWS credentials based on stage parameter.
 
-    STAGE=local (default): Assumes the specified role (throws if not provided)
-    STAGE=prod: Uses default credentials (task role in deployed environment)
+    stage="local" (default): Assumes the specified role (throws if not provided)
+    stage="prod": Uses default credentials (task role in deployed environment)
 
     Args:
         region: AWS region
-        local_role_arn: ARN of role to assume when STAGE=local (required for local)
+        stage: Deployment stage ("local" or "prod")
+        local_role_arn: ARN of role to assume when stage="local" (required for local)
 
     Returns:
         boto3.Session with appropriate credentials
 
     Raises:
-        ValueError: If STAGE=local but no role ARN provided, or if role assumption fails
+        ValueError: If stage="local" but no role ARN provided, or if role assumption fails
     """
-    stage = os.getenv("STAGE", "local").lower()
+    stage = stage.lower()
 
     if stage == "local":
         # Local development - role assumption required

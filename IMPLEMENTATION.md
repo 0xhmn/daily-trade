@@ -560,96 +560,109 @@ For **optimal strategy selection**:
 
 **Goal**: Build AI-powered signal generation with hybrid architecture (custom control + LangChain extensibility)
 
+**Status**: 🎯 IN PROGRESS (62% complete - 24/39 tasks)
+
 **Architecture Decision**: Hybrid approach using LangChain's retriever abstraction while maintaining custom control over prompting, parsing, and multimodal context. This enables future GraphRAG integration.
 
 ### RAG Architecture Setup
 
-- [ ] Install `langchain-core` (lightweight, ~5 dependencies only)
-- [ ] Create `BaseRetriever` wrapper for existing OpenSearch service
-- [ ] Implement `MultimodalOpenSearchRetriever` class
-- [ ] Preserve multimodal context in Document metadata
+- [x] Install `langchain-core` (lightweight, ~5 dependencies only)
+- [x] Create `BaseRetriever` wrapper for existing OpenSearch service
+- [x] Implement `MultimodalOpenSearchRetriever` class
+- [x] Preserve multimodal context in Document metadata
 - [ ] Test retriever with existing hybrid search
 - [ ] Document retriever interface
 
 ### RAG Service Integration
 
-- [ ] Create TradingRAGService class (custom, not LangChain chains)
-- [ ] Integrate retriever abstraction
-- [ ] Implement query preprocessing
-- [ ] Add context retrieval via retriever interface
-- [ ] Implement relevance filtering
-- [ ] Add source citation extraction from metadata
+- [x] Create TradingRAGService class (custom, not LangChain chains)
+- [x] Integrate retriever abstraction
+- [x] Implement query preprocessing
+- [x] Add context retrieval via retriever interface
+- [x] Implement relevance filtering
+- [x] Add source citation extraction from metadata
 - [ ] Write unit tests for RAG service
 
 ### Bedrock LLM Integration
 
-- [ ] Create BedrockService class
-- [ ] Configure Claude 3 Sonnet access
-- [ ] Implement prompt template system
-- [ ] Add response parsing logic
-- [ ] Implement streaming responses (if needed)
-- [ ] Add error handling for API limits
-- [ ] Create fallback to Haiku for cost savings
+- [x] Create BedrockService class
+- [x] Configure Claude 3 Sonnet access
+- [x] Implement prompt template system
+- [x] Add response parsing logic
+- [ ] Implement streaming responses (if needed) - _Deferred_
+- [x] Add error handling for API limits
+- [x] Create fallback to Haiku for cost savings
 - [ ] Write unit tests for Bedrock service
 
 ### Signal Generation
 
-- [ ] Create SignalService class
-- [ ] Implement signal generation prompt template
-- [ ] Add market context injection
-- [ ] Implement LLM response parsing
-- [ ] Add signal validation logic
-- [ ] Create entry/target/stop-loss calculation
-- [ ] Implement risk/reward calculation
-- [ ] Add holding period estimation
+- [x] Create SignalService class
+- [x] Implement signal generation prompt template
+- [x] Add market context injection
+- [x] Implement LLM response parsing
+- [x] Add signal validation logic
+- [x] Create entry/target/stop-loss calculation
+- [x] Implement risk/reward calculation
+- [x] Add holding period estimation
 - [ ] Write unit tests for signal generation
+
+### Signal Data Models
+
+- [x] Create SignalType enum (BUY, SELL, HOLD)
+- [x] Create ConfidenceLevel enum (HIGH, MEDIUM, LOW)
+- [x] Create SignalPricing dataclass
+- [x] Create Signal dataclass with validation
+- [x] Implement signal serialization (to_dict)
+- [x] Add profit/loss percentage calculations
 
 ### Confidence Scoring
 
-- [ ] Create SignalScoringService class
-- [ ] Implement weighted confidence calculation
-- [ ] Add source agreement scoring
-- [ ] Implement indicator strength scoring
-- [ ] Add pattern confidence scoring
-- [ ] Create overall confidence formula
+- [x] Implement confidence calculation in SignalService
+- [x] Add citation count scoring (35% weight)
+- [x] Add source diversity scoring (20% weight)
+- [x] Add key factors scoring (25% weight)
+- [x] Add indicator alignment scoring (20% weight)
+- [ ] Create standalone SignalScoringService class (optional refinement)
 - [ ] Test scoring with various scenarios
 - [ ] Write unit tests for scoring
 
 ### Citation Management
 
-- [ ] Implement citation extraction from LLM response
-- [ ] Create citation formatting
+- [x] Implement citation extraction from RAG context
+- [x] Create citation formatting
+- [x] Add image reference extraction
 - [ ] Add source attribution validation
 - [ ] Implement citation ranking
 - [ ] Create citation storage in SignalHistory
 - [ ] Add citation display formatting
 
-### Signal Ranking
+### Mock Data Generation
 
-- [ ] Create signal ranking algorithm
-- [ ] Implement multi-stock comparison
-- [ ] Add diversification consideration
-- [ ] Create top opportunities selection
-- [ ] Implement signal filtering by confidence
-- [ ] Test ranking with multiple signals
+- [x] Create MockMarketDataGenerator class
+- [x] Implement scenario-based market states
+- [x] Add support/resistance level generation
+- [x] Add technical indicator generation (RSI, MACD, SMAs)
+- [x] Add pattern generation
+- [x] Create watchlist data generator
+- [x] Create historical price generator
 
 ### Testing & Validation
 
-- [ ] Test signal generation with live market data
+- [ ] Test signal generation with mock market data
 - [ ] Validate citation accuracy
 - [ ] Test confidence scoring distribution
 - [ ] Create signal generation test script
-- [ ] Test with historical scenarios
+- [ ] Test with various market scenarios
 - [ ] Validate entry/exit price reasonableness
 - [ ] Document signal generation process
 
-**Phase 3 Completion Criteria**:
+**Phase 2 Completion Criteria**:
 
 - ✓ RAG system integrated with LLM
-- ✓ Signals generated with citations
-- ✓ Confidence scoring working
-- ✓ Signal quality validated
-- ✓ End-to-end signal generation tested
+- ✓ Signal generation pipeline operational
+- ✓ Confidence scoring implemented
+- ⏳ Signal quality validated (pending testing)
+- ⏳ End-to-end signal generation tested with mock data
 
 ---
 

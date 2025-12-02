@@ -43,6 +43,7 @@ class MultimodalOpenSearchRepository:
         self,
         host: str,
         region: str = "us-east-1",
+        stage: str = "local",
         text_index: str = "text-chunks",
         extracted_images_index: str = "extracted-images",
         full_pages_index: str = "full-page-images",
@@ -56,20 +57,24 @@ class MultimodalOpenSearchRepository:
         Args:
             host: OpenSearch domain endpoint
             region: AWS region
+            stage: Deployment stage ("local" or "prod")
             text_index: Name of text chunks index
             extracted_images_index: Name of extracted images index
             full_pages_index: Name of full page images index
             use_ssl: Use SSL connection
             verify_certs: Verify SSL certificates
-            local_role_arn: Role ARN for local development
+            local_role_arn: Role ARN for local development (required if stage="local")
         """
         self.text_index = text_index
         self.extracted_images_index = extracted_images_index
         self.full_pages_index = full_pages_index
         self.region = region
+        self.stage = stage
 
         # Initialize credentials
-        session = get_credentials_for_opensearch(region=region, local_role_arn=local_role_arn)
+        session = get_credentials_for_opensearch(
+            region=region, stage=stage, local_role_arn=local_role_arn
+        )
         credentials = session.get_credentials()
         if credentials is None:
             raise ValueError("AWS credentials not found")

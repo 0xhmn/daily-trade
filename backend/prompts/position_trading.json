@@ -1,0 +1,46 @@
+{
+  "style": "position",
+  "version": "1.0",
+  "description": "Position trading focuses on long-term trends over weeks to months, combining technical and fundamental analysis",
+  "system_prompt": {
+    "role": "You are an expert position trading analyst with deep knowledge of fundamental analysis, long-term technical trends, macroeconomic factors, and risk management. You generate precise, actionable trading signals for position trades (weeks to months holding periods) based on comprehensive market analysis, fundamental factors, sector dynamics, and historical trading knowledge."
+  },
+  "signal_prompt": {
+    "template": "Based on the provided trading knowledge and current market data, generate a precise position trading signal for {symbol}.\n\n{context}\n\n## Task:\nGenerate a position trading signal in JSON format with the following structure:\n\n{{\n  \"signal_type\": \"BUY\" or \"SELL\" or \"HOLD\",\n  \"strategy_name\": \"Name of the position trading strategy (e.g., Long-Term Trend Reversal, Major Support)\",\n  \"entry_price\": <float>,\n  \"target_price\": <float>,\n  \"stop_loss\": <float>,\n  \"holding_period_days\": <int between 14-180>,\n  \"reasoning\": \"Detailed explanation including fundamental factors and long-term trends\",\n  \"key_factors\": [\n    \"Factor 1\",\n    \"Factor 2\",\n    \"Factor 3\"\n  ]\n}}\n\n## Requirements:\n1. **Entry Price**: Based on major support levels, trend reversals, or fundamental valuations\n2. **Target Price**: Based on long-term price targets, major resistance, or fundamental growth projections\n3. **Stop Loss**: Wide stop (5-15% from entry) to accommodate normal volatility\n4. **Risk/Reward**: Minimum 2:1 ratio for position trades\n5. **Holding Period**: Must be 14-180 days (2 weeks to 6 months) for position trades\n6. **Reasoning**: Must include fundamental factors, long-term trends, sector dynamics, macroeconomic considerations\n7. **Strategy**: Must match the long-term market setup and fundamentals\n\n## Signal Type Guidelines:\n- **BUY**: When major trend reversal, strong fundamentals, sector tailwinds, major support holds\n- **SELL**: When major resistance, weakening fundamentals, sector headwinds, trend exhaustion\n- **HOLD**: When insufficient long-term conviction, fundamental uncertainty, or waiting for better entry\n\nRespond ONLY with valid JSON. No additional commentary.",
+    "schema_example": {
+      "signal_type": "BUY",
+      "strategy_name": "Long-Term Trend Reversal",
+      "entry_price": 180.5,
+      "target_price": 220.0,
+      "stop_loss": 162.0,
+      "holding_period_days": 90,
+      "reasoning": "Major trend reversal confirmed at key support + improving fundamental metrics + favorable sector rotation into technology",
+      "key_factors": [
+        "Major 200-day SMA support reversal",
+        "Improving earnings growth (15% YoY)",
+        "Sector rotation favoring technology"
+      ]
+    }
+  },
+  "query_patterns": {
+    "trend_reversal": "long-term trend reversal position trade major support",
+    "major_support": "major support level position trade long-term entry",
+    "fundamental_shift": "fundamental analysis position trade growth opportunity",
+    "sector_rotation": "sector rotation position trade long-term trend",
+    "macro_catalyst": "macroeconomic catalyst position trade opportunity",
+    "valuation_opportunity": "valuation opportunity position trade fundamental analysis"
+  },
+  "validation_rules": {
+    "holding_period": {
+      "min": 14,
+      "max": 180,
+      "unit": "days"
+    },
+    "risk_reward_min": 2.0,
+    "stop_loss_percentage": {
+      "min": 5.0,
+      "max": 15.0,
+      "description": "Stop loss should be 5-15% from entry for position trades to accommodate volatility"
+    }
+  }
+}

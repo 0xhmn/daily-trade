@@ -132,17 +132,20 @@ daily-trade/
 │   │
 │   ├── services/
 │   │   ├── __init__.py
-│   │   ├── market_data_service.py           # yfinance wrapper
-│   │   ├── rag_service.py                   # RAG orchestration
-│   │   ├── analysis_service.py              # Technical analysis
-│   │   ├── signal_service.py                # Signal generation
-│   │   ├── opensearch_service.py            # Hybrid search implementation
-│   │   └── bedrock_service.py               # AWS Bedrock client
+│   │   ├── trading_retriever.py             # LangChain BaseRetriever wrapper
+│   │   ├── trading_rag_service.py           # RAG context orchestration
+│   │   ├── bedrock_service.py               # AWS Bedrock LLM client
+│   │   ├── signal_service.py                # Signal generation orchestration
+│   │   ├── hybrid_multimodal_search.py      # 5-stream hybrid search
+│   │   ├── mock_market_data.py              # Mock data generator for testing
+│   │   ├── market_data_service.py           # yfinance wrapper (Phase 5)
+│   │   └── analysis_service.py              # Technical analysis (Phase 5)
 │   │
 │   ├── models/
 │   │   ├── __init__.py
-│   │   ├── domain.py                        # Domain models (Trade, Signal, Stock)
-│   │   └── schemas.py                       # API schemas (requests/responses)
+│   │   ├── signal.py                        # Signal data models (Signal, SignalPricing, enums)
+│   │   ├── domain.py                        # Domain models (Trade, Stock) - Phase 4
+│   │   └── schemas.py                       # API schemas (requests/responses) - Phase 4
 │   │
 │   ├── repositories/
 │   │   ├── __init__.py
