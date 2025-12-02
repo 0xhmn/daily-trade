@@ -26,18 +26,18 @@ Usage:
         --document-type test-doc
 
 Example with William O'Neil book:
-    python scripts/ingest_multimodal_documents.py \\
-        --pdf "data/knowledge_base/swing_trading/O'Neil - 2009 - How to make money in stocks.pdf" \\
-        --opensearch-host search-daily-trade-knowledge-001-xxx.us-east-1.es.amazonaws.com \\
-        --local-role-arn arn:aws:iam::560271561561:role/DailyTradeLocalOpenSearchAccess \\
-        --s3-bucket daily-trade-images-560271561561 \\
-        --title "How to Make Money in Stocks" \\
-        --author "William O'Neil" \\
-        --strategy-type swing_trading \\
-        --document-type ebook \\
-        --timeframe "3-8_weeks" \\
-        --market-conditions trending bullish \\
-        --asset-class equities \\
+python scripts/ingest_multimodal_documents.py \
+        --pdf "data/knowledge_base/swing_trading/how_to_make_money_in_stocks.pdf" \
+        --opensearch-host search-daily-trade-knowledge-001-l5zwovvaduyu5jorkbqfcrpspe.us-east-1.es.amazonaws.com \
+        --local-role-arn arn:aws:iam::560271561561:role/DailyTradeLocalOpenSearchAccess \
+        --s3-bucket daily-trade-images-560271561561 \
+        --title "How to Make Money in Stocks" \
+        --author "William O'Neil" \
+        --strategy-type swing_trading \
+        --document-type ebook \
+        --timeframe "3-8_weeks" \
+        --market-conditions trending bullish \
+        --asset-class equities \
         --concepts CAN_SLIM cup_with_handle relative_strength
 """
 
