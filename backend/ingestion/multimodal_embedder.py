@@ -9,13 +9,15 @@ Supports:
 """
 
 import base64
+import io
 import json
 import logging
 import time
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import boto3
 from botocore.exceptions import ClientError
+from PIL import Image
 
 logger = logging.getLogger(__name__)
 
@@ -132,6 +134,37 @@ class NovaMultimodalEmbeddingService:
 
         raise RuntimeError(f"Failed to generate text embedding after {self.max_retries} attempts")
 
+    def _get_image_dimensions(self, image_bytes: bytes) -> Tuple[int, int]:
+        """
+        Extract width and height from image bytes.
+
+        Args:
+            image_bytes: Image bytes
+
+        Returns:
+            Tuple of (width, height)
+        """
+        img = Image.open(io.BytesIO(image_bytes))
+        return img.size
+
+    def _validate_aspect_ratio(self, width: int, height: int, max_ratio: float = 20.0) -> bool:
+        """
+        Validate image aspect ratio is within acceptable bounds.
+
+        Args:
+            width: Image width in pixels
+            height: Image height in pixels
+            max_ratio: Maximum allowed aspect ratio (default: 20.0)
+
+        Returns:
+            True if aspect ratio is valid (between 1/max_ratio and max_ratio)
+        """
+        if width == 0 or height == 0:
+            return False
+
+        ratio = width / height
+        return (1 / max_ratio) <= ratio <= max_ratio
+
     def generate_image_embedding(
         self,
         image_bytes: bytes,
@@ -148,8 +181,22 @@ class NovaMultimodalEmbeddingService:
                     "GENERIC_RETRIEVAL" for query
 
         Returns:
-            Image embedding vector
+            Image embedding vector, or empty list if aspect ratio is invalid
         """
+        # Validate aspect ratio before sending to Bedrock
+        try:
+            width, height = self._get_image_dimensions(image_bytes)
+            if not self._validate_aspect_ratio(width, height):
+                ratio = width / height if height > 0 else float("inf")
+                logger.warning(
+                    f"Skipping image with invalid aspect ratio: {width}x{height} "
+                    f"(ratio: {ratio:.2f}, max: 20:1)"
+                )
+                return []
+        except Exception as e:
+            logger.warning(f"Failed to validate image dimensions: {e}")
+            return []
+
         for attempt in range(self.max_retries):
             try:
                 # Encode image to base64

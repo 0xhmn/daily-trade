@@ -167,7 +167,63 @@ def show_data_statistics(repo: MultimodalOpenSearchRepository) -> Dict[str, Any]
             print(f"  Documents: {Colors.OKCYAN}{index_stats['document_count']:,}{Colors.ENDC}")
             print()
 
-        # Try to get document by title for text-chunks
+        # Aggregate by source_file across all indexes
+        print(f"\n{Colors.BOLD}Documents Grouped by Source File:{Colors.ENDC}\n")
+
+        source_file_data = {}
+        indexes_to_check = ["text-chunks", "extracted-images", "full-page-images"]
+
+        for index_name in indexes_to_check:
+            try:
+                agg_query = {
+                    "size": 0,
+                    "aggs": {
+                        "by_source": {
+                            "terms": {
+                                "field": "metadata.source_file",
+                                "size": 100,
+                                "order": {"_count": "desc"},
+                            },
+                        },
+                    },
+                }
+
+                response = repo.client.search(index=index_name, body=agg_query)
+                buckets = response["aggregations"]["by_source"]["buckets"]
+
+                for bucket in buckets:
+                    source_file = bucket["key"]
+                    count = bucket["doc_count"]
+
+                    if source_file not in source_file_data:
+                        source_file_data[source_file] = {
+                            "text-chunks": 0,
+                            "extracted-images": 0,
+                            "full-page-images": 0,
+                        }
+                    source_file_data[source_file][index_name] = count
+
+            except Exception as e:
+                print_warning(f"Could not aggregate {index_name} by source_file: {e}")
+
+        if source_file_data:
+            # Sort by total documents (descending)
+            sorted_sources = sorted(
+                source_file_data.items(), key=lambda x: sum(x[1].values()), reverse=True
+            )
+
+            for i, (source_file, counts) in enumerate(sorted_sources, 1):
+                total = sum(counts.values())
+                print(f"{i}. {Colors.BOLD}{source_file}{Colors.ENDC}")
+                print(f"   Total: {Colors.OKCYAN}{total:,} documents{Colors.ENDC}")
+                print(f"   ├─ text-chunks: {counts['text-chunks']:,}")
+                print(f"   ├─ extracted-images: {counts['extracted-images']:,}")
+                print(f"   └─ full-page-images: {counts['full-page-images']:,}")
+                print()
+        else:
+            print_warning("No source file data found")
+
+        # Try to get document by title for text-chunks (additional info)
         try:
             agg_query = {
                 "size": 0,
@@ -310,7 +366,7 @@ def delete_document_data(
     try:
         # Check each index and count matching documents
         # All three indexes now use metadata.source_file for consistent deletion
-        source_file_query = {"term": {"metadata.source_file.keyword": f"{document_id}.pdf"}}
+        source_file_query = {"term": {"metadata.source_file": f"{document_id}.pdf"}}
 
         queries = {
             "text-chunks": source_file_query,

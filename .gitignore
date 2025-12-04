@@ -95,6 +95,14 @@ data/knowledge_base/*.txt
 data/knowledge_base/*.docx
 !data/knowledge_base/.gitkeep
 
+# Document ingestion artifacts
+**/*_text_chunks.json
+**/*_extracted_images_manifest.json
+**/*_full_pages_manifest.json
+**/*_linked_content.json
+**/*_extracted_images/
+**/*_full_pages/
+
 # Logs
 logs/
 *.log

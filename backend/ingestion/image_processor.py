@@ -39,11 +39,12 @@ class ExtractedImage:
     image_id: str
     page_number: int
     bbox: Tuple[float, float, float, float]  # (x0, y0, x1, y1)
-    image_bytes: bytes
     image_format: str  # PNG, JPEG, SVG, etc.
     width: int
     height: int
     extraction_method: str  # Which method was used
+    file_path: Optional[str] = None  # Path to image file on disk
+    image_bytes: Optional[bytes] = None  # Loaded on-demand from file_path
     extracted_text: Optional[str] = None  # OCR text if present
     file_size: int = 0
     drawing_metadata: Optional[Dict[str, Any]] = None  # Metadata from get_drawings()
@@ -56,7 +57,36 @@ class ExtractedImage:
 
     def __post_init__(self):
         """Calculate file size after initialization."""
-        self.file_size = len(self.image_bytes)
+        if self.image_bytes:
+            self.file_size = len(self.image_bytes)
+        elif self.file_path:
+            file_path = Path(self.file_path)
+            if file_path.exists():
+                self.file_size = file_path.stat().st_size
+
+    def get_image_bytes(self) -> bytes:
+        """
+        Get image bytes, loading from disk if necessary.
+
+        Returns:
+            Image bytes
+
+        Raises:
+            FileNotFoundError: If file_path doesn't exist
+            ValueError: If neither image_bytes nor file_path are available
+        """
+        if self.image_bytes is not None:
+            return self.image_bytes
+
+        if self.file_path:
+            file_path = Path(self.file_path)
+            if file_path.exists():
+                self.image_bytes = file_path.read_bytes()
+                return self.image_bytes
+            else:
+                raise FileNotFoundError(f"Image file not found: {file_path}")
+
+        raise ValueError(f"No image_bytes or file_path available for {self.image_id}")
 
 
 @dataclass
@@ -151,13 +181,17 @@ class ImageProcessor:
             f"DPI: {dpi}"
         )
 
-    def extract_images_from_pdf(self, pdf_path: Path, document_id: str) -> List[ExtractedImage]:
+    def extract_images_from_pdf(
+        self, pdf_path: Path, document_id: str, output_dir: Optional[Path] = None
+    ) -> List[ExtractedImage]:
         """
         Extract all images from a PDF with position metadata.
 
         Args:
             pdf_path: Path to PDF file
             document_id: Unique document identifier for image naming
+            output_dir: Optional directory to save images directly to disk.
+                       If provided, images are saved and file_path is set instead of image_bytes.
 
         Returns:
             List of ExtractedImage objects
@@ -165,6 +199,11 @@ class ImageProcessor:
         logger.info(f"Extracting images from: {pdf_path} using {self.extraction_method.value}")
         extracted_images = []
         seen_hashes = set()  # For deduplication
+
+        # Create output directory if specified
+        if output_dir:
+            output_dir = Path(output_dir)
+            output_dir.mkdir(parents=True, exist_ok=True)
 
         try:
             doc = fitz.open(pdf_path)
@@ -175,6 +214,17 @@ class ImageProcessor:
                 page_images = self._extract_images_from_page(
                     page, page_num + 1, document_id, seen_hashes
                 )
+
+                # If output_dir specified, save images to disk immediately
+                if output_dir:
+                    for img in page_images:
+                        file_path = output_dir / f"{img.image_id}.{img.image_format.lower()}"
+                        file_path.write_bytes(img.get_image_bytes())
+                        # Replace image_bytes with file_path to save memory
+                        img.file_path = str(file_path)
+                        img.image_bytes = None
+                        logger.debug(f"Saved to disk: {file_path}")
+
                 extracted_images.extend(page_images)
 
             doc.close()
@@ -360,6 +410,31 @@ class ImageProcessor:
 
         return page_images
 
+    def _is_bbox_contained(
+        self,
+        inner_bbox: Tuple[float, float, float, float],
+        outer_bbox: Tuple[float, float, float, float],
+        tolerance: float = 2.0,
+    ) -> bool:
+        """
+        Check if inner_bbox is fully contained within outer_bbox.
+        This check has been added to remove images which is just a smaller part of larger image.
+
+        Args:
+            inner_bbox: Inner bounding box (x0, y0, x1, y1)
+            outer_bbox: Outer bounding box (x0, y0, x1, y1)
+            tolerance: Tolerance for edge alignment (default: 2.0)
+
+        Returns:
+            True if inner_bbox is contained within outer_bbox
+        """
+        return (
+            inner_bbox[0] >= outer_bbox[0] - tolerance
+            and inner_bbox[1] >= outer_bbox[1] - tolerance
+            and inner_bbox[2] <= outer_bbox[2] + tolerance
+            and inner_bbox[3] <= outer_bbox[3] + tolerance
+        )
+
     def _extract_with_get_drawings(
         self, page: fitz.Page, page_num: int, document_id: str, seen_hashes: set
     ) -> List[ExtractedImage]:
@@ -369,12 +444,15 @@ class ImageProcessor:
         try:
             drawings = page.get_drawings()
 
+            # First pass: collect candidate bboxes with metadata
+            candidates = []
             for draw_idx, drawing in enumerate(drawings):
                 try:
                     # Get bounding rect for this drawing
                     rect = drawing.get("rect")
                     if not rect:
                         logger.debug(f"Drawing {draw_idx} on page {page_num}: No rect")
+                        continue
 
                     # Convert rect to fitz.Rect
                     draw_rect = fitz.Rect(rect)
@@ -394,6 +472,72 @@ class ImageProcessor:
                         )
                         continue
 
+                    # Apply drawing type filter
+                    drawing_type = drawing.get("type", "")
+                    if self.drawing_type_filter and drawing_type != self.drawing_type_filter:
+                        logger.debug(
+                            f"Drawing {draw_idx} on page {page_num}: Type mismatch "
+                            f"('{drawing_type}' != '{self.drawing_type_filter}'), skipping"
+                        )
+                        continue
+
+                    # Apply fill color filter
+                    fill_color = drawing.get("fill")
+                    if self.drawing_fill_filter and fill_color != self.drawing_fill_filter:
+                        logger.debug(
+                            f"Drawing {draw_idx} on page {page_num}: Fill color mismatch "
+                            f"({fill_color} != {self.drawing_fill_filter}), skipping"
+                        )
+                        continue
+
+                    # Store candidate with its bbox and metadata
+                    bbox = (draw_rect.x0, draw_rect.y0, draw_rect.x1, draw_rect.y1)
+                    candidates.append(
+                        {
+                            "draw_idx": draw_idx,
+                            "drawing": drawing,
+                            "bbox": bbox,
+                            "draw_rect": draw_rect,
+                            "area": draw_rect.width * draw_rect.height,
+                        }
+                    )
+
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to process drawing {draw_idx} metadata from page {page_num}: {e}"
+                    )
+                    continue
+
+            # Filter out contained bboxes
+            # Sort by area (largest first) for efficient filtering
+            candidates.sort(key=lambda c: c["area"], reverse=True)
+            filtered_candidates = []
+
+            for i, candidate in enumerate(candidates):
+                is_contained = False
+                # Check if this candidate is contained by any larger candidate
+                for j in range(i):
+                    if self._is_bbox_contained(candidate["bbox"], candidates[j]["bbox"]):
+                        logger.debug(
+                            f"Drawing {candidate['draw_idx']} on page {page_num}: "
+                            f"Contained within drawing {candidates[j]['draw_idx']}, skipping"
+                        )
+                        is_contained = True
+                        break
+                if not is_contained:
+                    filtered_candidates.append(candidate)
+
+            logger.debug(
+                f"Page {page_num}: Filtered {len(candidates)} candidates to "
+                f"{len(filtered_candidates)} non-contained drawings"
+            )
+
+            # Second pass: render only non-contained drawings
+            for candidate in filtered_candidates:
+                draw_idx = candidate["draw_idx"]
+                drawing = candidate["drawing"]
+                draw_rect = candidate["draw_rect"]
+                try:
                     # Render drawing region at specified DPI
                     mat = fitz.Matrix(self.dpi / 72, self.dpi / 72)
                     pix = page.get_pixmap(matrix=mat, clip=draw_rect, alpha=False)
@@ -405,26 +549,6 @@ class ImageProcessor:
                         logger.debug(
                             f"Drawing {draw_idx} on page {page_num}: File too small "
                             f"({file_size_kb:.1f}KB < {self.min_file_size_kb}KB), skipping"
-                        )
-                        pix = None
-                        continue
-
-                    # Apply drawing type filter
-                    drawing_type = drawing.get("type", "")
-                    if self.drawing_type_filter and drawing_type != self.drawing_type_filter:
-                        logger.debug(
-                            f"Drawing {draw_idx} on page {page_num}: Type mismatch "
-                            f"('{drawing_type}' != '{self.drawing_type_filter}'), skipping"
-                        )
-                        pix = None
-                        continue
-
-                    # Apply fill color filter
-                    fill_color = drawing.get("fill")
-                    if self.drawing_fill_filter and fill_color != self.drawing_fill_filter:
-                        logger.debug(
-                            f"Drawing {draw_idx} on page {page_num}: Fill color mismatch "
-                            f"({fill_color} != {self.drawing_fill_filter}), skipping"
                         )
                         pix = None
                         continue
@@ -442,7 +566,7 @@ class ImageProcessor:
                     extracted_img = ExtractedImage(
                         image_id=image_id,
                         page_number=page_num,
-                        bbox=(draw_rect.x0, draw_rect.y0, draw_rect.x1, draw_rect.y1),
+                        bbox=candidate["bbox"],
                         image_bytes=image_bytes,
                         image_format="PNG",
                         width=pix.width,
@@ -551,7 +675,7 @@ class ImageProcessor:
         """
         return f"{document_id}_p{page_num:04d}_img{image_idx:03d}"
 
-    def save_images_locally(
+    def save_images_metadata_locally(
         self,
         images: List[ExtractedImage],
         output_dir: Path,
@@ -579,7 +703,7 @@ class ImageProcessor:
         for img in images:
             try:
                 file_path = output_dir / f"{img.image_id}.{img.image_format.lower()}"
-                file_path.write_bytes(img.image_bytes)
+                file_path.write_bytes(img.get_image_bytes())
                 saved_files.append(str(file_path))
                 logger.debug(f"Saved: {file_path}")
 
@@ -675,7 +799,7 @@ class ImageProcessor:
             self.s3_client.put_object(
                 Bucket=self.s3_bucket,
                 Key=s3_key,
-                Body=image.image_bytes,
+                Body=image.get_image_bytes(),
                 ContentType=f"image/{image.image_format.lower()}",
                 Metadata={
                     "page_number": str(image.page_number),
@@ -788,7 +912,7 @@ class ImageProcessor:
         Returns:
             Base64 encoded image string
         """
-        return base64.b64encode(image.image_bytes).decode("utf-8")
+        return base64.b64encode(image.get_image_bytes()).decode("utf-8")
 
     def optimize_image(
         self, image: ExtractedImage, max_width: int = 1024, max_height: int = 1024
@@ -811,7 +935,8 @@ class ImageProcessor:
 
         try:
             # Load image
-            img = Image.open(io.BytesIO(image.image_bytes))
+            img_bytes = image.get_image_bytes()
+            img = Image.open(io.BytesIO(img_bytes))
 
             # Check if resize needed
             if img.width > max_width or img.height > max_height:
@@ -826,7 +951,7 @@ class ImageProcessor:
                 logger.debug(
                     f"Optimized image {image.image_id}: "
                     f"{image.width}x{image.height} -> {img.width}x{img.height}, "
-                    f"{len(image.image_bytes) / 1024:.1f}KB -> "
+                    f"{len(img_bytes) / 1024:.1f}KB -> "
                     f"{len(optimized_bytes) / 1024:.1f}KB"
                 )
 
@@ -853,7 +978,11 @@ class ImageProcessor:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
-    pdf_path = Path("data/sample_data/4_page_with_image.pdf")
+    # pdf_path = Path("data/sample_data/4_page_with_image/4_page_with_image.pdf")
+    # pdf_path = Path(
+    #     "data/knowledge_base/swing_trading/how_to_make_money_in_stocks/how_to_make_money_in_stocks.pdf"
+    # )
+    pdf_path = Path("data/sample_data/pages_with_vector_images/full_book.pdf")
     document_id = "4_page_with_image"
     save_locally = True  # Set to True to save locally, False for S3
     output_dir = Path("backend/ingestion/tmp")
@@ -871,7 +1000,7 @@ if __name__ == "__main__":
     processor = ImageProcessor(
         s3_bucket="daily-trade-images-560271561561" if not save_locally else None,
         extraction_method=ExtractionMethod.GET_DRAWINGS,
-        dpi=150,
+        dpi=300,
         min_file_size_kb=20.0,
         drawing_type_filter="f",
         drawing_fill_filter=(1.0, 1.0, 1.0),
@@ -879,7 +1008,7 @@ if __name__ == "__main__":
 
     try:
         # Extract images
-        images = processor.extract_images_from_pdf(pdf_path, document_id)
+        images = processor.extract_images_from_pdf(pdf_path, document_id, output_dir)
         print(f"\nExtracted {len(images)} images")
 
         # Display extracted images
@@ -896,7 +1025,7 @@ if __name__ == "__main__":
         if images:
             if save_locally:
                 print(f"\nSaving {len(images)} images locally...")
-                result = processor.save_images_locally(images, output_dir, document_id)
+                result = processor.save_images_metadata_locally(images, output_dir, document_id)
                 print(f"\nSaved to: {result['output_dir']}")
                 print(f"Metadata file: {result['metadata_file']}")
             else:

@@ -1,0 +1,84 @@
+{
+  "document_id": "how_to_make_money_in_stocks",
+  "pdf_path": "data/knowledge_base/swing_trading/how_to_make_money_in_stocks/how_to_make_money_in_stocks.pdf",
+  "created_at": "2025-12-04T00:08:52.696550",
+  "updated_at": "2025-12-04T04:53:05.030585",
+  "phases": {
+    "extract_text": {
+      "status": "completed",
+      "started_at": "2025-12-04T00:08:52.696660",
+      "completed_at": "2025-12-04T00:14:31.911322",
+      "error": null,
+      "metadata": {
+        "chunks": 1091
+      }
+    },
+    "extract_images": {
+      "status": "completed",
+      "started_at": "2025-12-04T02:49:56.114039",
+      "completed_at": "2025-12-04T02:53:41.277858",
+      "error": null,
+      "metadata": {
+        "images": 500
+      }
+    },
+    "extract_full_pages": {
+      "status": "completed",
+      "started_at": "2025-12-04T01:03:46.876599",
+      "completed_at": "2025-12-04T01:05:34.673483",
+      "error": null,
+      "metadata": {
+        "pages": 460
+      }
+    },
+    "describe_images": {
+      "status": "completed",
+      "started_at": "2025-12-04T02:53:41.372381",
+      "completed_at": "2025-12-04T03:48:28.167158",
+      "error": null,
+      "metadata": {}
+    },
+    "describe_pages": {
+      "status": "completed",
+      "started_at": "2025-12-04T03:48:28.167468",
+      "completed_at": "2025-12-04T04:22:44.361888",
+      "error": null,
+      "metadata": {}
+    },
+    "embed_text_chunks": {
+      "status": "completed",
+      "started_at": "2025-12-04T04:22:44.362194",
+      "completed_at": "2025-12-04T04:27:42.544962",
+      "error": null,
+      "metadata": {}
+    },
+    "embed_images": {
+      "status": "completed",
+      "started_at": "2025-12-04T04:35:36.481345",
+      "completed_at": "2025-12-04T04:42:47.772989",
+      "error": null,
+      "metadata": {}
+    },
+    "embed_full_pages": {
+      "status": "completed",
+      "started_at": "2025-12-04T04:42:47.773444",
+      "completed_at": "2025-12-04T04:48:16.658159",
+      "error": null,
+      "metadata": {}
+    },
+    "cross_reference": {
+      "status": "completed",
+      "started_at": "2025-12-04T04:48:16.658602",
+      "completed_at": "2025-12-04T04:48:16.661972",
+      "error": null,
+      "metadata": {}
+    },
+    "index_opensearch": {
+      "status": "completed",
+      "started_at": "2025-12-04T04:52:48.167989",
+      "completed_at": "2025-12-04T04:53:05.030570",
+      "error": null,
+      "metadata": {}
+    }
+  }
+}

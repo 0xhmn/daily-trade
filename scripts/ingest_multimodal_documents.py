@@ -15,30 +15,31 @@ Features:
 - Indexes to 3 OpenSearch indexes
 
 Usage:
-    python scripts/ingest_multimodal_documents.py \\
-        --pdf data/sample_data/4_page_with_image.pdf \\
-        --opensearch-host search-daily-trade-knowledge-001-xxx.us-east-1.es.amazonaws.com \\
-        --local-role-arn arn:aws:iam::560271561561:role/DailyTradeLocalOpenSearchAccess \\
-        --s3-bucket daily-trade-images-560271561561 \\
-        --title "Technical Analysis Sample" \\
-        --author "Test Author" \\
-        --strategy-type technical_analysis \\
-        --document-type test-doc
+python scripts/ingest_multimodal_documents.py \
+    --pdf data/sample_data/4_page_with_image.pdf \
+    --opensearch-host search-daily-trade-knowledge-001-xxx.us-east-1.es.amazonaws.com \
+    --local-role-arn arn:aws:iam::560271561561:role/DailyTradeLocalOpenSearchAccess \
+    --s3-bucket daily-trade-images-560271561561 \
+    --title "Technical Analysis Sample" \
+    --author "Test Author" \
+    --strategy-type technical_analysis \
+    --document-type test-doc
 
 Example with William O'Neil book:
 python scripts/ingest_multimodal_documents.py \
-        --pdf "data/knowledge_base/swing_trading/how_to_make_money_in_stocks.pdf" \
-        --opensearch-host search-daily-trade-knowledge-001-l5zwovvaduyu5jorkbqfcrpspe.us-east-1.es.amazonaws.com \
-        --local-role-arn arn:aws:iam::560271561561:role/DailyTradeLocalOpenSearchAccess \
-        --s3-bucket daily-trade-images-560271561561 \
-        --title "How to Make Money in Stocks" \
-        --author "William O'Neil" \
-        --strategy-type swing_trading \
-        --document-type ebook \
-        --timeframe "3-8_weeks" \
-        --market-conditions trending bullish \
-        --asset-class equities \
-        --concepts CAN_SLIM cup_with_handle relative_strength
+  --pdf "data/knowledge_base/swing_trading/how_to_make_money_in_stocks/how_to_make_money_in_stocks.pdf" \
+  --opensearch-host search-daily-trade-knowledge-001-l5zwovvaduyu5jorkbqfcrpspe.us-east-1.es.amazonaws.com \
+  --local-role-arn arn:aws:iam::560271561561:role/DailyTradeLocalOpenSearchAccess \
+  --s3-bucket daily-trade-images-560271561561 \
+  --title "How to Make Money in Stocks: A Winning System in Good Times and Bad, Fourth Edition" \
+  --author "William J. O'Neil" \
+  --strategy-type swing_trading \
+  --document-type ebook \
+  --timeframe "3_weeks-6_months" \
+  --market-conditions bull_and_bear \
+  --asset-class equities \
+  --concepts CAN_SLIM cup_with_handle relative_strength earnings_growth institutional_buying chart_patterns volume_analysis
+
 """
 
 import argparse
@@ -164,6 +165,11 @@ def parse_args():
         action="store_true",
         help="Skip OpenSearch indexing (only process locally)",
     )
+    parser.add_argument(
+        "--reset-checkpoint",
+        action="store_true",
+        help="Reset checkpoint and start ingestion from beginning",
+    )
 
     return parser.parse_args()
 
@@ -226,6 +232,19 @@ async def main():
     logger.info(f"✓ Embedding Dimension: {args.embedding_dimension}")
     logger.info(f"✓ Image Extraction: {args.image_extraction_method}")
 
+    # Image extraction quality reminder
+    print("\n" + "\033[93m" + "=" * 80)
+    print("⚠️  IMAGE EXTRACTION QUALITY REMINDER")
+    print("=" * 80)
+    print("For BEST image extraction results (especially with Amazon Kindle/DRM PDFs):")
+    print("  1. Open the PDF in Preview (macOS) or your PDF viewer")
+    print("  2. Print → Save as PDF")
+    print("  3. Use the re-saved PDF for ingestion")
+    print("")
+    print("This flattens vector graphics into single drawing objects, preventing")
+    print("fragmented/split images during extraction.")
+    print("=" * 80 + "\033[0m\n")
+
     if not args.skip_indexing:
         # Initialize OpenSearch repository
         logger.info("\n[2/2] Initializing OpenSearch repository...")
@@ -255,7 +274,9 @@ async def main():
         logger.info("=" * 80)
 
         try:
-            results = await orchestrator.ingest_document(pdf_path, metadata, repository)
+            results = await orchestrator.ingest_document(
+                pdf_path, metadata, repository, reset_checkpoint=args.reset_checkpoint
+            )
 
             # Display results
             logger.info("\n" + "=" * 80)

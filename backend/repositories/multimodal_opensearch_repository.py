@@ -480,12 +480,13 @@ class MultimodalOpenSearchRepository:
             "extracted_image_ids": page.extracted_image_ids,
         }
 
-    def bulk_index_text_chunks(self, chunks: List) -> Tuple[int, int]:
+    def bulk_index_text_chunks(self, chunks: List, chunk_size: int = 50) -> Tuple[int, int]:
         """
         Bulk index text chunks.
 
         Args:
             chunks: List of DocumentChunk dataclasses or dictionaries
+            chunk_size: Number of documents per bulk request (to avoid 10MB limit)
 
         Returns:
             Tuple of (success_count, failed_count)
@@ -506,16 +507,19 @@ class MultimodalOpenSearchRepository:
             }
             for chunk in chunk_dicts
         ]
-        success, failed = bulk(self.client, actions, raise_on_error=False, refresh=True)
+        success, failed = bulk(
+            self.client, actions, raise_on_error=False, refresh=True, chunk_size=chunk_size
+        )
         logger.info(f"Bulk indexed text chunks: {success} success, {len(failed)} failed")
         return success, len(failed)
 
-    def bulk_index_extracted_images(self, images: List) -> Tuple[int, int]:
+    def bulk_index_extracted_images(self, images: List, chunk_size: int = 50) -> Tuple[int, int]:
         """
         Bulk index extracted images.
 
         Args:
             images: List of ExtractedImage dataclasses or dictionaries
+            chunk_size: Number of documents per bulk request (to avoid 10MB limit)
 
         Returns:
             Tuple of (success_count, failed_count)
@@ -536,16 +540,19 @@ class MultimodalOpenSearchRepository:
             }
             for img in image_dicts
         ]
-        success, failed = bulk(self.client, actions, raise_on_error=False, refresh=True)
+        success, failed = bulk(
+            self.client, actions, raise_on_error=False, refresh=True, chunk_size=chunk_size
+        )
         logger.info(f"Bulk indexed extracted images: {success} success, {len(failed)} failed")
         return success, len(failed)
 
-    def bulk_index_full_page_images(self, pages: List) -> Tuple[int, int]:
+    def bulk_index_full_page_images(self, pages: List, chunk_size: int = 50) -> Tuple[int, int]:
         """
         Bulk index full page images.
 
         Args:
             pages: List of FullPageImage dataclasses or dictionaries
+            chunk_size: Number of documents per bulk request (to avoid 10MB limit)
 
         Returns:
             Tuple of (success_count, failed_count)
@@ -566,7 +573,9 @@ class MultimodalOpenSearchRepository:
             }
             for page in page_dicts
         ]
-        success, failed = bulk(self.client, actions, raise_on_error=False, refresh=True)
+        success, failed = bulk(
+            self.client, actions, raise_on_error=False, refresh=True, chunk_size=chunk_size
+        )
         logger.info(f"Bulk indexed full pages: {success} success, {len(failed)} failed")
         return success, len(failed)
 
