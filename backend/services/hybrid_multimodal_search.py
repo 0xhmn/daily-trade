@@ -9,8 +9,17 @@ Implements 5-stream hybrid search with Reciprocal Rank Fusion:
 5. Text-to-Full-Page (Multimodal embeddings)
 
 Plus contextual expansion for comprehensive retrieval.
+
+TODO: Current Limitations (Future Enhancements)
+- [ ] Add keyword/lexical search (BM25) alongside vector search
+- [ ] Add metadata filters (strategy_type, asset_class, date ranges, etc.)
+- [ ] Add recency boosting for time-sensitive content
+- [ ] Add configurable stream weights for RRF (currently equal weighting)
+- [x] Add parallel execution for 5-stream search (using asyncio TaskGroup)
+- [ ] Add caching for frequently used query embeddings
 """
 
+import asyncio
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
@@ -63,7 +72,7 @@ class HybridMultimodalSearch:
 
         logger.info(f"Initialized HybridMultimodalSearch with RRF k={rrf_k}")
 
-    def search(
+    async def search(
         self,
         query: str,
         top_k: int = 10,
@@ -72,7 +81,7 @@ class HybridMultimodalSearch:
         max_expanded: int = 20,
     ) -> List[SearchResult]:
         """
-        Perform hybrid multimodal search with 5 streams.
+        Perform hybrid multimodal search with 5 parallel streams.
 
         Args:
             query: Search query text
@@ -89,57 +98,65 @@ class HybridMultimodalSearch:
         # Generate query embeddings
         query_text_emb = self.embedder.generate_text_embedding(query, purpose="GENERIC_RETRIEVAL")
 
-        # Parallel 5-stream search
+        # Parallel 5-stream search using asyncio TaskGroup
         logger.info(f"Executing 5-stream parallel search (k={retrieval_k} each)...")
 
-        stream_1 = self.repository.vector_search_text(query_text_emb, k=retrieval_k)
-        stream_2 = self.repository.vector_search_extracted_images_text(
-            query_text_emb, k=retrieval_k
-        )
-        stream_3 = self.repository.vector_search_extracted_images_multimodal(
-            query_text_emb, k=retrieval_k
-        )
-        stream_4 = self.repository.vector_search_full_pages_text(query_text_emb, k=retrieval_k)
-        stream_5 = self.repository.vector_search_full_pages_multimodal(
-            query_text_emb, k=retrieval_k
-        )
+        stream_results: Dict[str, List[Dict[str, Any]]] = {}
+
+        async with asyncio.TaskGroup() as tg:
+
+            async def run_search(name: str, search_func, k: int):
+                result = await asyncio.to_thread(search_func, query_text_emb, k)
+                stream_results[name] = result
+
+            tg.create_task(run_search("text", self.repository.vector_search_text, retrieval_k))
+            tg.create_task(
+                run_search(
+                    "img_text", self.repository.vector_search_extracted_images_text, retrieval_k
+                )
+            )
+            tg.create_task(
+                run_search(
+                    "img_mm", self.repository.vector_search_extracted_images_multimodal, retrieval_k
+                )
+            )
+            tg.create_task(
+                run_search("page_text", self.repository.vector_search_full_pages_text, retrieval_k)
+            )
+            tg.create_task(
+                run_search(
+                    "page_mm", self.repository.vector_search_full_pages_multimodal, retrieval_k
+                )
+            )
 
         logger.info(
-            f"Retrieved: text={len(stream_1)}, "
-            f"img_text={len(stream_2)}, img_mm={len(stream_3)}, "
-            f"page_text={len(stream_4)}, page_mm={len(stream_5)}"
+            f"Retrieved: text={len(stream_results.get('text', []))}, "
+            f"img_text={len(stream_results.get('img_text', []))}, "
+            f"img_mm={len(stream_results.get('img_mm', []))}, "
+            f"page_text={len(stream_results.get('page_text', []))}, "
+            f"page_mm={len(stream_results.get('page_mm', []))}"
         )
 
         # Convert to SearchResult objects
         results_1 = [
             SearchResult(id=r["id"], score=r["score"], result_type="text_chunk", content=r)
-            for r in stream_1
+            for r in stream_results.get("text", [])
         ]
         results_2 = [
-            SearchResult(
-                id=r["id"],
-                score=r["score"],
-                result_type="extracted_image",
-                content=r,
-            )
-            for r in stream_2
+            SearchResult(id=r["id"], score=r["score"], result_type="extracted_image", content=r)
+            for r in stream_results.get("img_text", [])
         ]
         results_3 = [
-            SearchResult(
-                id=r["id"],
-                score=r["score"],
-                result_type="extracted_image",
-                content=r,
-            )
-            for r in stream_3
+            SearchResult(id=r["id"], score=r["score"], result_type="extracted_image", content=r)
+            for r in stream_results.get("img_mm", [])
         ]
         results_4 = [
             SearchResult(id=r["id"], score=r["score"], result_type="full_page", content=r)
-            for r in stream_4
+            for r in stream_results.get("page_text", [])
         ]
         results_5 = [
             SearchResult(id=r["id"], score=r["score"], result_type="full_page", content=r)
-            for r in stream_5
+            for r in stream_results.get("page_mm", [])
         ]
 
         # Apply Reciprocal Rank Fusion

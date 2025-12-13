@@ -6,6 +6,7 @@ Enables future integration with GraphRAG and other LangChain components while
 maintaining custom control over prompting and parsing.
 """
 
+import asyncio
 import logging
 from typing import List, Optional
 
@@ -94,13 +95,15 @@ class MultimodalOpenSearchRetriever(BaseRetriever):
         """
         logger.info(f"Retrieving documents for query: '{query[:50]}...'")
 
-        # Perform hybrid search
-        search_results = self.search_service.search(
-            query=query,
-            top_k=self.top_k,
-            retrieval_k=self.retrieval_k,
-            expand_context=self.expand_context,
-            max_expanded=self.max_expanded,
+        # Perform hybrid search (async method called from sync context)
+        search_results = asyncio.run(
+            self.search_service.search(
+                query=query,
+                top_k=self.top_k,
+                retrieval_k=self.retrieval_k,
+                expand_context=self.expand_context,
+                max_expanded=self.max_expanded,
+            )
         )
 
         # Convert to LangChain Documents
@@ -188,7 +191,7 @@ class MultimodalOpenSearchRetriever(BaseRetriever):
         """
         Async version of _get_relevant_documents.
 
-        Currently calls sync version. Can be optimized later if needed.
+        Properly awaits the async search service.
 
         Args:
             query: Search query text
@@ -197,9 +200,22 @@ class MultimodalOpenSearchRetriever(BaseRetriever):
         Returns:
             List of LangChain Document objects with preserved metadata
         """
-        # Note: run_manager is async type, but we're calling sync method
-        # For now, we pass None to sync method since we can't use async manager with sync code
-        return self._get_relevant_documents(query, run_manager=None)
+        logger.info(f"Async retrieving documents for query: '{query[:50]}...'")
+
+        # Perform hybrid search (native async)
+        search_results = await self.search_service.search(
+            query=query,
+            top_k=self.top_k,
+            retrieval_k=self.retrieval_k,
+            expand_context=self.expand_context,
+            max_expanded=self.max_expanded,
+        )
+
+        # Convert to LangChain Documents
+        documents = [self._convert_to_document(result) for result in search_results]
+
+        logger.info(f"Retrieved {len(documents)} documents")
+        return documents
 
 
 # Example usage
