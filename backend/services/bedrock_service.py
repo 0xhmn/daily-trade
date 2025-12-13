@@ -27,17 +27,21 @@ class BedrockService:
     - Error handling and fallback
     """
 
-    # Model IDs
-    CLAUDE_OPUS_4_5 = "anthropic.claude-opus-4-5-20251101-v1:0"
-    CLAUDE_SONNET_4_5 = "anthropic.claude-sonnet-4-5-20250929-v1:0"
+    # Model IDs - Cross-region inference profile IDs for Claude 4.x models
+    # Claude 4.x models require inference profiles, not direct model IDs
+    CLAUDE_OPUS_4 = "us.anthropic.claude-opus-4-20250514-v1:0"
+    CLAUDE_SONNET_4 = "us.anthropic.claude-sonnet-4-20250514-v1:0"
+    CLAUDE_SONNET_4_5 = "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+
+    # Claude 3.x models support direct on-demand invocation
     CLAUDE_3_SONNET = "anthropic.claude-3-sonnet-20240229-v1:0"
     CLAUDE_3_HAIKU = "anthropic.claude-3-haiku-20240307-v1:0"
 
     def __init__(
         self,
         region_name: str = "us-east-1",
-        primary_model: str = CLAUDE_OPUS_4_5,
-        fallback_model: Optional[str] = CLAUDE_SONNET_4_5,
+        primary_model: str = CLAUDE_SONNET_4_5,
+        fallback_model: Optional[str] = CLAUDE_3_SONNET,
         max_tokens: int = 4096,
         temperature: float = 0.3,
     ):
@@ -58,7 +62,7 @@ class BedrockService:
         self.temperature = temperature
 
         # Initialize Bedrock Runtime client
-        self.client = boto3.client(service_name="bedrock-runtime", region_name=region_name)
+        self.client = boto3.client("bedrock-runtime", region_name=region_name)
 
         logger.info(
             f"Initialized BedrockService "
@@ -138,11 +142,16 @@ class BedrockService:
         Returns:
             Raw response from Bedrock API
         """
-        # Construct messages for Claude
-        messages = [{"role": "user", "content": prompt}]
+        # Construct messages for Claude using native format
+        messages = [
+            {
+                "role": "user",
+                "content": [{"type": "text", "text": prompt}],
+            }
+        ]
 
-        # Build request body
-        body = {
+        # Build request body using native structure
+        native_request: Dict[str, Any] = {
             "anthropic_version": "bedrock-2023-05-31",
             "max_tokens": self.max_tokens,
             "temperature": self.temperature,
@@ -151,15 +160,10 @@ class BedrockService:
 
         # Add system prompt if provided
         if system_prompt:
-            body["system"] = system_prompt
+            native_request["system"] = system_prompt
 
         # Invoke model
-        response = self.client.invoke_model(
-            modelId=model_id,
-            body=json.dumps(body),
-            contentType="application/json",
-            accept="application/json",
-        )
+        response = self.client.invoke_model(modelId=model_id, body=json.dumps(native_request))
 
         # Parse response body
         response_body = json.loads(response["body"].read())
